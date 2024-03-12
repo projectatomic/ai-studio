@@ -11,6 +11,7 @@
     "watch": "vite --mode development build -w"
   },
   "dependencies": {
+    "@podman-desktop/ui-svelte": "next",
     "tinro": "^0.6.12"
   },
   "devDependencies": {

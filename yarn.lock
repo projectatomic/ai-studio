@@ -381,6 +381,17 @@
   resolved "https://registry.yarnpkg.com/@podman-desktop/api/-/api-1.8.0.tgz#03205b1b1685c4208a0739d99ac23bb4c749da60"
   integrity sha512-z+eTWLQOdhSNxz4KtgMmCaCjghCYPsXoxrMN2NZdDxwoljWmVNB7Q3X/+s1cl7r3hrjwnS6EfZzoYJWQgx9WCQ==
 
+"@podman-desktop/ui-svelte@next":
+  version "0.0.202403121157-6b3f1f7"
+  resolved "https://registry.yarnpkg.com/@podman-desktop/ui-svelte/-/ui-svelte-0.0.202403121157-6b3f1f7.tgz#417f82c9a0d7d922a08fdaa9f60bd956f5648378"
+  integrity sha512-L8lXyCkGQ/hf62lHoaHAbZijUcy6rh28zf9IDpVqo3yidoePN12kwewd2CyrnJjygxSyuYR3wkh35cf1QD0nUg==
+  dependencies:
+    "@fortawesome/fontawesome-free" "^6.5.1"
+    "@fortawesome/free-brands-svg-icons" "^6.5.1"
+    "@fortawesome/free-regular-svg-icons" "^6.5.1"
+    "@fortawesome/free-solid-svg-icons" "^6.5.1"
+    svelte-fa "^4.0.2"
+
 "@rollup/rollup-android-arm-eabi@4.9.1":
   version "4.9.1"
   resolved "https://registry.yarnpkg.com/@rollup/rollup-android-arm-eabi/-/rollup-android-arm-eabi-4.9.1.tgz#beaf518ee45a196448e294ad3f823d2d4576cf35"
