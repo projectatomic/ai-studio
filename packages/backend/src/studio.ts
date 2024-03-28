@@ -129,6 +129,8 @@ export class Studio {
 
     // Create catalog manager, responsible for loading the catalog files and watching for changes
     this.catalogManager = new CatalogManager(this.#panel.webview, appUserDirectory);
+    this.catalogManager.init();
+
     this.modelsManager = new ModelsManager(
       appUserDirectory,
       this.#panel.webview,
@@ -136,7 +138,8 @@ export class Studio {
       this.telemetry,
       taskRegistry,
     );
-    const localRepositoryRegistry = new LocalRepositoryRegistry(this.#panel.webview);
+    const localRepositoryRegistry = new LocalRepositoryRegistry(this.#panel.webview, appUserDirectory);
+    localRepositoryRegistry.init(this.catalogManager.getRecipes());
     const applicationManager = new ApplicationManager(
       appUserDirectory,
       gitManager,
@@ -187,7 +190,6 @@ export class Studio {
       cancellationTokenRegistry,
     );
 
-    this.catalogManager.init();
     await this.modelsManager.loadLocalModels();
     podmanConnection.init();
     applicationManager.adoptRunningApplications();

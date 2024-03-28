@@ -372,7 +372,7 @@ export class StudioApiImpl implements StudioAPI {
     const unixPath: string = path.normalize(directory).replace(/[\\/]+/g, '/');
 
     podmanDesktopApi.env
-      .openExternal(podmanDesktopApi.Uri.parse(unixPath).with({ scheme: 'vscode', authority: 'file' }))
+      .openExternal(podmanDesktopApi.Uri.file(unixPath).with({ scheme: 'vscode', authority: 'file' }))
       .catch((err: unknown) => {
         console.error('Something went wrong while trying to open VSCode', err);
       });
@@ -395,5 +395,26 @@ export class StudioApiImpl implements StudioAPI {
     if (!this.cancellationTokenRegistry.hasCancellationTokenSource(tokenId))
       throw new Error(`Cancellation token with id ${tokenId} does not exist.`);
     this.cancellationTokenRegistry.getCancellationTokenSource(tokenId).cancel();
+  }
+
+  async requestDeleteLocalRepository(path: string): Promise<void> {
+    // Do not wait on the promise as the api would probably timeout before the user answer.
+    podmanDesktopApi.window
+      .showWarningMessage(`Delete permanently "${path}"?`, 'Confirm', 'Cancel')
+      .then((result: string) => {
+        if (result === 'Confirm') {
+          this.localRepositories.deleteLocalRepository(path).catch((err: unknown) => {
+            console.error(`error deleting path: ${String(err)}`);
+            podmanDesktopApi.window
+              .showErrorMessage(`Error deleting local path "${path}". Error: ${String(err)}`)
+              .catch((err: unknown) => {
+                console.error(`Something went wrong with confirmation modals`, err);
+              });
+          });
+        }
+      })
+      .catch((err: unknown) => {
+        console.error(`Something went wrong with confirmation modals`, err);
+      });
   }
 }

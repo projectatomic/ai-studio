@@ -33,6 +33,8 @@ const mocks = vi.hoisted(() => {
     findMock: vi.fn(),
     getLocalRepositoriesMock: vi.fn(),
     getTasksMock: vi.fn(),
+    openFileMock: vi.fn(),
+    requestDeleteLocalRepositoryMock: vi.fn(),
   };
 });
 
@@ -41,6 +43,8 @@ vi.mock('../utils/client', async () => {
     studioClient: {
       pullApplication: mocks.pullApplicationMock,
       getApplicationsState: mocks.getApplicationsStateMock,
+      openFile: mocks.openFileMock,
+      requestDeleteLocalRepository: mocks.requestDeleteLocalRepositoryMock,
     },
     rpcBrowser: {
       subscribe: () => {
@@ -245,4 +249,35 @@ test('start application button should be the only one displayed', async () => {
 
   const btnRestart = screen.queryByTitle('Restart AI App');
   expect(btnRestart).toBeNull();
+});
+
+test('local clone and delete local clone buttons should be visible if local repository is not empty', async () => {
+  mocks.getApplicationsStateMock.mockResolvedValue([]);
+  mocks.getLocalRepositoriesMock.mockReturnValue([
+    {
+      path: 'random-path',
+      labels: {
+        'recipe-id': 'recipe 1',
+      },
+    },
+  ]);
+  vi.mocked(catalogStore).catalog = readable<ApplicationCatalog>(initialCatalog);
+  render(RecipeDetails, {
+    recipeId: 'recipe 1',
+    modelId: 'model2',
+  });
+
+  const buttonLocalClone = screen.getByRole('button', { name: 'Local clone' });
+  expect(buttonLocalClone).toBeDefined();
+  expect(buttonLocalClone).toBeInTheDocument();
+  await userEvent.click(buttonLocalClone);
+
+  expect(mocks.openFileMock).toBeCalled();
+
+  const buttonDeleteClone = screen.getByTitle('Delete local clone');
+  expect(buttonDeleteClone).toBeDefined();
+  expect(buttonDeleteClone).toBeInTheDocument();
+  await userEvent.click(buttonDeleteClone);
+
+  expect(mocks.requestDeleteLocalRepositoryMock).toBeCalled();
 });

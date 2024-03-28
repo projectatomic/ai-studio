@@ -161,4 +161,10 @@ export abstract class StudioAPI {
    * @param tokenId the id of the CancellationToken to cancel
    */
   abstract requestCancelToken(tokenId: number): Promise<void>;
+
+  /**
+   * Delete a local path
+   * @param path path to delete
+   */
+  abstract requestDeleteLocalRepository(path: string): Promise<void>;
 }

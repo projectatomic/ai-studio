@@ -20,22 +20,20 @@
 
 import { beforeEach, expect, test, vi } from 'vitest';
 import content from './tests/ai-test.json';
-import userContent from './tests/ai-user-test.json';
 import type { ApplicationManager } from './managers/applicationManager';
 import { StudioApiImpl } from './studio-api-impl';
 import type { InferenceManager } from './managers/inference/inferenceManager';
 import type { TelemetryLogger, Webview } from '@podman-desktop/api';
-import { EventEmitter } from '@podman-desktop/api';
+import { window, EventEmitter } from '@podman-desktop/api';
 import { CatalogManager } from './managers/catalogManager';
 import type { ModelsManager } from './managers/modelsManager';
-
-import * as fs from 'node:fs';
 import { timeout } from './utils/utils';
 import type { TaskRegistry } from './registries/TaskRegistry';
-import type { LocalRepositoryRegistry } from './registries/LocalRepositoryRegistry';
+import { LocalRepositoryRegistry } from './registries/LocalRepositoryRegistry';
 import type { Recipe } from '@shared/src/models/IRecipe';
 import type { PlaygroundV2Manager } from './managers/playgroundV2Manager';
 import type { SnippetManager } from './managers/SnippetManager';
+import type { ModelInfo } from '@shared/src/models/IModelInfo';
 import type { CancellationTokenRegistry } from './registries/CancellationTokenRegistry';
 
 vi.mock('./ai.json', () => {
@@ -65,6 +63,7 @@ vi.mock('@podman-desktop/api', async () => {
     window: {
       withProgress: mocks.withProgressMock,
       showWarningMessage: mocks.showWarningMessageMock,
+      showErrorMessage: vi.fn(),
     },
     ProgressLocation: {
       TASK_WIDGET: 'TASK_WIDGET',
@@ -81,6 +80,7 @@ vi.mock('@podman-desktop/api', async () => {
 
 let studioApiImpl: StudioApiImpl;
 let catalogManager: CatalogManager;
+let localRepositoryRegistry: LocalRepositoryRegistry;
 
 beforeEach(async () => {
   vi.resetAllMocks();
@@ -95,6 +95,13 @@ beforeEach(async () => {
     appUserDirectory,
   );
 
+  localRepositoryRegistry = new LocalRepositoryRegistry(
+    {
+      postMessage: vi.fn().mockResolvedValue(undefined),
+    } as unknown as Webview,
+    appUserDirectory,
+  );
+
   // Creating StudioApiImpl
   studioApiImpl = new StudioApiImpl(
     {
@@ -103,7 +110,7 @@ beforeEach(async () => {
     catalogManager,
     {} as unknown as ModelsManager,
     {} as TelemetryLogger,
-    {} as LocalRepositoryRegistry,
+    localRepositoryRegistry,
     {} as unknown as TaskRegistry,
     {} as unknown as InferenceManager,
     {} as unknown as PlaygroundV2Manager,
@@ -125,13 +132,17 @@ beforeEach(async () => {
 });
 
 test('expect pull application to call the withProgress api method', async () => {
-  vi.spyOn(fs, 'existsSync').mockReturnValue(true);
-  vi.spyOn(fs.promises, 'readFile').mockResolvedValue(JSON.stringify(userContent));
+  vi.spyOn(catalogManager, 'getRecipes').mockReturnValue([
+    {
+      id: 'recipe 1',
+    } as unknown as Recipe,
+  ]);
+  vi.spyOn(catalogManager, 'getModelById').mockReturnValue({
+    id: 'model',
+  } as unknown as ModelInfo);
 
   mocks.withProgressMock.mockResolvedValue(undefined);
 
-  catalogManager.init();
-  await vi.waitUntil(() => catalogManager.getRecipes().length > 0);
   await studioApiImpl.pullApplication('recipe 1', 'model1');
   expect(mocks.withProgressMock).toHaveBeenCalledOnce();
 });
@@ -144,4 +155,24 @@ test('requestRemoveApplication should ask confirmation', async () => {
   await studioApiImpl.requestRemoveApplication('recipe-id-1', 'model-id-1');
   await timeout(0);
   expect(mocks.deleteApplicationMock).toHaveBeenCalled();
+});
+
+test('requestDeleteLocalRepository should ask confirmation', async () => {
+  mocks.showWarningMessageMock.mockResolvedValue('Confirm');
+  const deleteLocalRepositoryMock = vi.spyOn(localRepositoryRegistry, 'deleteLocalRepository').mockResolvedValue();
+  await studioApiImpl.requestDeleteLocalRepository('path');
+  await timeout(0);
+  expect(deleteLocalRepositoryMock).toHaveBeenCalled();
+});
+
+test('if requestDeleteLocalRepository fails an errorMessage should show up', async () => {
+  mocks.showWarningMessageMock.mockResolvedValue('Confirm');
+  const deleteLocalRepositoryMock = vi
+    .spyOn(localRepositoryRegistry, 'deleteLocalRepository')
+    .mockRejectedValue('error deleting');
+  const errorMessageMock = vi.spyOn(window, 'showErrorMessage').mockResolvedValue('');
+  await studioApiImpl.requestDeleteLocalRepository('path');
+  await timeout(0);
+  expect(deleteLocalRepositoryMock).toHaveBeenCalled();
+  expect(errorMessageMock).toBeCalledWith('Error deleting local path "path". Error: error deleting');
 });

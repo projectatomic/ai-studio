@@ -19,6 +19,9 @@ import { beforeEach, expect, test, vi } from 'vitest';
 import { LocalRepositoryRegistry } from './LocalRepositoryRegistry';
 import { Messages } from '@shared/Messages';
 import type { Webview } from '@podman-desktop/api';
+import type { Recipe } from '@shared/src/models/IRecipe';
+import fs from 'node:fs';
+import path from 'node:path';
 
 const mocks = vi.hoisted(() => ({
   DisposableCreateMock: vi.fn(),
@@ -33,22 +36,38 @@ vi.mock('@podman-desktop/api', async () => {
   };
 });
 
+vi.mock('node:fs', () => {
+  return {
+    existsSync: vi.fn(),
+    promises: {
+      rm: vi.fn(),
+    },
+  };
+});
+
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mock('node:fs');
   mocks.postMessageMock.mockResolvedValue(undefined);
 });
 
 test('should not have any repositories by default', () => {
-  const localRepositories = new LocalRepositoryRegistry({
-    postMessage: mocks.postMessageMock,
-  } as unknown as Webview);
+  const localRepositories = new LocalRepositoryRegistry(
+    {
+      postMessage: mocks.postMessageMock,
+    } as unknown as Webview,
+    '/appUserDirectory',
+  );
   expect(localRepositories.getLocalRepositories().length).toBe(0);
 });
 
 test('should notify webview when register', () => {
-  const localRepositories = new LocalRepositoryRegistry({
-    postMessage: mocks.postMessageMock,
-  } as unknown as Webview);
+  const localRepositories = new LocalRepositoryRegistry(
+    {
+      postMessage: mocks.postMessageMock,
+    } as unknown as Webview,
+    '/appUserDirectory',
+  );
   localRepositories.register({ path: 'random', labels: { 'recipe-id': 'random' } });
   expect(mocks.postMessageMock).toHaveBeenNthCalledWith(1, {
     id: Messages.MSG_LOCAL_REPOSITORY_UPDATE,
@@ -56,15 +75,58 @@ test('should notify webview when register', () => {
   });
 });
 
-test('should notify webview when unregister', () => {
-  const localRepositories = new LocalRepositoryRegistry({
-    postMessage: mocks.postMessageMock,
-  } as unknown as Webview);
+test('should notify webview when unregister', async () => {
+  const localRepositories = new LocalRepositoryRegistry(
+    {
+      postMessage: mocks.postMessageMock,
+    } as unknown as Webview,
+    '/appUserDirectory',
+  );
+  vi.spyOn(fs.promises, 'rm').mockResolvedValue();
   localRepositories.register({ path: 'random', labels: { 'recipe-id': 'random' } });
-  localRepositories.unregister('random');
+  await localRepositories.deleteLocalRepository('random');
 
   expect(mocks.postMessageMock).toHaveBeenLastCalledWith({
     id: Messages.MSG_LOCAL_REPOSITORY_UPDATE,
     body: [],
   });
+});
+
+test('should register localRepo if it find the folder of the recipe', () => {
+  vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+  const localRepositories = new LocalRepositoryRegistry(
+    {
+      postMessage: mocks.postMessageMock,
+    } as unknown as Webview,
+    '/appUserDirectory',
+  );
+  const registerMock = vi.spyOn(localRepositories, 'register');
+  localRepositories.init([
+    {
+      id: 'recipe',
+    } as unknown as Recipe,
+  ]);
+
+  expect(registerMock).toHaveBeenCalledWith({
+    path: path.join('/appUserDirectory', 'recipe'),
+    labels: { 'recipe-id': 'recipe' },
+  });
+});
+
+test('should NOT register localRepo if it does not find the folder of the recipe', () => {
+  vi.spyOn(fs, 'existsSync').mockReturnValue(false);
+  const localRepositories = new LocalRepositoryRegistry(
+    {
+      postMessage: mocks.postMessageMock,
+    } as unknown as Webview,
+    '/appUserDirectory',
+  );
+  const registerMock = vi.spyOn(localRepositories, 'register');
+  localRepositories.init([
+    {
+      id: 'recipe',
+    } as unknown as Recipe,
+  ]);
+
+  expect(registerMock).not.toHaveBeenCalled();
 });

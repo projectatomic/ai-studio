@@ -1,5 +1,5 @@
 <script lang="ts">
-import { faList } from '@fortawesome/free-solid-svg-icons';
+import { faFolderOpen, faList, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { faGithub } from '@fortawesome/free-brands-svg-icons';
 import { getDisplayName } from '/@/utils/versionControlUtils';
 import TasksProgress from '/@/lib/progress/TasksProgress.svelte';
@@ -65,6 +65,18 @@ function startApplication() {
     console.error('Something went wrong while pulling AI App', err);
   });
 }
+
+const openLocalClone = () => {
+  if (localPath) {
+    studioClient.openFile(localPath.path);
+  }
+};
+
+const deleteLocalClone = () => {
+  if (localPath) {
+    studioClient.requestDeleteLocalRepository(localPath.path);
+  }
+};
 </script>
 
 <div class="w-full bg-charcoal-600 rounded-md p-4">
@@ -147,15 +159,26 @@ function startApplication() {
       </div>
     </div>
   {/if}
-  <div class="flex flex-col space-y-2 w-[45px]">
+  <div class="flex flex-col w-full space-y-2 w-[45px]">
     <div class="text-base">Repository</div>
-    <div class="cursor-pointer flex text-nowrap items-center">
+    <div class="cursor-pointer flex flex-col w-full space-y-2 text-nowrap">
       <button on:click="{onClickRepository}">
-        <div class="flex flex-row p-0 m-0 bg-transparent justify-center items-center space-x-2">
+        <div class="flex flex-row p-0 m-0 bg-transparent items-center space-x-2">
           <Fa size="lg" icon="{faGithub}" />
           <span>{getDisplayName(recipe?.repository)}</span>
         </div>
       </button>
+      {#if localPath}
+        <div class="flex flex-row w-full justify-between">
+          <button on:click="{openLocalClone}" aria-label="Local clone">
+            <div class="flex flex-row p-0 m-0 bg-transparent items-center space-x-2">
+              <Fa size="lg" icon="{faFolderOpen}" />
+              <span>Local clone</span>
+            </div>
+          </button>
+          <Button title="Delete local clone" on:click="{deleteLocalClone}" icon="{faTrash}" />
+        </div>
+      {/if}
     </div>
   </div>
   {#if localPath}
