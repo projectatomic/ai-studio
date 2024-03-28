@@ -40,6 +40,7 @@ import { LocalRepositoryRegistry } from './registries/LocalRepositoryRegistry';
 import { InferenceManager } from './managers/inference/inferenceManager';
 import { PlaygroundV2Manager } from './managers/playgroundV2Manager';
 import { SnippetManager } from './managers/SnippetManager';
+import { CancellationTokenRegistry } from './registries/CancellationTokenRegistry';
 
 // TODO: Need to be configured
 export const AI_LAB_FOLDER = path.join('podman-desktop', 'ai-lab');
@@ -110,6 +111,10 @@ export class Studio {
     console.log('updated indexHtml to', indexHtml);
 
     this.#panel.webview.html = indexHtml;
+
+    // Creating cancellation token registry
+    const cancellationTokenRegistry = new CancellationTokenRegistry();
+    this.#extensionContext.subscriptions.push(cancellationTokenRegistry);
 
     // Creating container registry
     const containerRegistry = new ContainerRegistry();
@@ -184,6 +189,7 @@ export class Studio {
       this.#inferenceManager,
       playgroundV2,
       snippetManager,
+      cancellationTokenRegistry,
     );
 
     await this.modelsManager.loadLocalModels();

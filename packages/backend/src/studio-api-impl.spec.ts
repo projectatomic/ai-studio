@@ -34,6 +34,7 @@ import type { Recipe } from '@shared/src/models/IRecipe';
 import type { PlaygroundV2Manager } from './managers/playgroundV2Manager';
 import type { SnippetManager } from './managers/SnippetManager';
 import type { ModelInfo } from '@shared/src/models/IModelInfo';
+import type { CancellationTokenRegistry } from './registries/CancellationTokenRegistry';
 
 vi.mock('./ai.json', () => {
   return {
@@ -114,6 +115,7 @@ beforeEach(async () => {
     {} as unknown as InferenceManager,
     {} as unknown as PlaygroundV2Manager,
     {} as unknown as SnippetManager,
+    {} as unknown as CancellationTokenRegistry,
   );
   vi.mock('node:fs');
 
