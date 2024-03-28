@@ -1,0 +1,27 @@
+pip
+=======
+pip install langchain langchain-openai 
+
+AiService.py
+==============
+from langchain_openai import OpenAI
+from langchain.chains import LLMChain
+from langchain_core.prompts import ChatPromptTemplate
+
+model_service = "{{{ endpoint }}}"
+
+llm = OpenAI(base_url=model_service, 
+             api_key="sk-no-key-required",
+             streaming=True)
+prompt = ChatPromptTemplate.from_messages([
+  ("system", "You are a helpful assistant."),
+  ("user", "What is the capital of France?")
+])
+
+chain = LLMChain(llm=llm, prompt=prompt)
+response = chain.invoke({
+  "messages": prompt
+})
+print(response)
+
+======

@@ -23,6 +23,7 @@ import { Messages } from '@shared/Messages';
 import type { RequestOptions } from '@shared/src/models/RequestOptions';
 import { quarkusLangchain4Jgenerator } from './snippets/quarkus-snippet';
 import { javaOkHttpGenerator } from './snippets/java-okhttp-snippet';
+import { pythonLangChainGenerator } from './snippets/python-langchain-snippet';
 
 type Generator = (requestOptions: RequestOptions) => Promise<string>;
 
@@ -72,6 +73,7 @@ export class SnippetManager extends Publisher<Language[]> implements Disposable 
     this.#additionalGenerators = new Map<string, Generator>();
     this.addVariant('java', 'Quarkus Langchain4J', quarkusLangchain4Jgenerator);
     this.addVariant('java', 'OkHttp', javaOkHttpGenerator);
+    this.addVariant('python', 'Python LangChain', pythonLangChainGenerator);
     // Notify the publisher
     this.notify();
   }
