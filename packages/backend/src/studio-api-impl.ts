@@ -42,6 +42,7 @@ import type { SnippetManager } from './managers/SnippetManager';
 import type { Language } from 'postman-code-generators';
 import type { ModelOptions } from '@shared/src/models/IModelOptions';
 import type { PlaygroundV2 } from '@shared/src/models/IPlaygroundV2';
+import type { CancellationTokenRegistry } from './registries/CancellationTokenRegistry';
 
 interface PortQuickPickItem extends podmanDesktopApi.QuickPickItem {
   port: number;
@@ -58,6 +59,7 @@ export class StudioApiImpl implements StudioAPI {
     private inferenceManager: InferenceManager,
     private playgroundV2: PlaygroundV2Manager,
     private snippetManager: SnippetManager,
+    private cancellationTokenRegistry: CancellationTokenRegistry,
   ) {}
 
   async requestDeleteConversation(conversationId: string): Promise<void> {
@@ -387,5 +389,11 @@ export class StudioApiImpl implements StudioAPI {
 
   getHostFreePort(): Promise<number> {
     return getFreeRandomPort('0.0.0.0');
+  }
+
+  async requestCancelToken(tokenId: number): Promise<void> {
+    if (!this.cancellationTokenRegistry.hasCancellationTokenSource(tokenId))
+      throw new Error(`Cancellation token with id ${tokenId} does not exist.`);
+    this.cancellationTokenRegistry.getCancellationTokenSource(tokenId).cancel();
   }
 }

@@ -155,4 +155,10 @@ export abstract class StudioAPI {
    * @param conversationId the conversation identifier that will be deleted
    */
   abstract requestDeleteConversation(conversationId: string): Promise<void>;
+
+  /**
+   * Request the cancellation of a token
+   * @param tokenId the id of the CancellationToken to cancel
+   */
+  abstract requestCancelToken(tokenId: number): Promise<void>;
 }
