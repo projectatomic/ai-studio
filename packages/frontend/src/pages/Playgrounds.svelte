@@ -22,7 +22,10 @@ function createNewPlayground() {
 }
 </script>
 
-<NavPage title="Playgrounds environments" searchEnabled="{false}">
+<NavPage
+  lastPage="{{ name: 'Playgrounds', path: '/playgrounds' }}"
+  title="Playground Environments"
+  searchEnabled="{false}">
   <svelte:fragment slot="additional-actions">
     <Button on:click="{() => createNewPlayground()}">New Playground</Button>
   </svelte:fragment>
@@ -34,7 +37,7 @@ function createNewPlayground() {
             <Table kind="playground" data="{$playgrounds}" columns="{columns}" row="{row}"></Table>
           {:else}
             <div role="status">
-              There is no playground environment for now. You can <a
+              There is no playground environment. You can <a
                 href="{'javascript:void(0);'}"
                 class="underline"
                 role="button"
