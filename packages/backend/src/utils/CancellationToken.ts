@@ -59,7 +59,6 @@ export class CancellationTokenImpl implements CancellationToken {
       return shortcutEvent;
     }
     if (!this.emitter) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       this.emitter = new EventEmitter<void>();
     }
     return this.emitter.event;
