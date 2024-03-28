@@ -112,13 +112,24 @@ export abstract class StudioAPI {
 
   /**
    * Submit a user input to the Playground linked to a conversation, model, and inference server
-   * @param containerId the container id of the inference server we want to use
-   * @param modelId the model to use
+   * @param conversationId the id of the conversation
    * @param conversationId the conversation to input the message in
    * @param userInput the user input, e.g. 'What is the capital of France ?'
    * @param options the options for the model, e.g. temperature
    */
-  abstract submitPlaygroundMessage(containerId: string, userInput: string, options?: ModelOptions): Promise<void>;
+  abstract submitPlaygroundMessage(conversationId: string, userInput: string, options?: ModelOptions): Promise<void>;
+
+  /**
+   * Regenerate an assistant message with the model options
+   * @param conversationId the id of the conversation where the message is listed
+   * @param messageId the id of the message
+   * @param options the new options to apply
+   */
+  abstract requestRegeneratePlaygroundMessage(
+    conversationId: string,
+    messageId: string,
+    options?: ModelOptions,
+  ): Promise<void>;
 
   /**
    * Given a conversation, update the system prompt.

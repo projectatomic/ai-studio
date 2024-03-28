@@ -7,8 +7,12 @@ import {
   isSystemPrompt,
   isUserChat,
 } from '@shared/src/models/IPlaygroundMessage';
+import Fa from 'svelte-fa';
+import { faRotateRight } from '@fortawesome/free-solid-svg-icons';
 
 export let message: ChatMessage;
+export let disabled: boolean;
+export let onRegenerate: (messageId: string) => void;
 
 const roles = {
   system: 'System prompt',
@@ -60,8 +64,15 @@ function elapsedTime(msg: AssistantChat): string {
     {/each}
   </div>
   {#if isAssistantChat(message)}
-    <div class="text-sm text-gray-400 text-right" aria-label="elapsed">
-      {elapsedTime(message)} s
+    <div class="flex w-full justify-end items-center gap-x-2">
+      <button
+        class:text-gray-900="{disabled}"
+        disabled="{disabled}"
+        on:click="{() => onRegenerate(message.id)}"
+        title="Regenerate"><Fa icon="{faRotateRight}" /></button>
+      <div class="text-sm text-gray-400 text-right" aria-label="elapsed">
+        {elapsedTime(message)} s
+      </div>
     </div>
   {/if}
   <div></div>

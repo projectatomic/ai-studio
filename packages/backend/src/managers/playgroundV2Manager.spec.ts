@@ -485,6 +485,57 @@ test('requestCreatePlayground should call createPlayground and createTask, then 
   });
 });
 
+describe('regenerate', () => {
+  test('when regenerate called the system message should be deleted', async () => {
+    vi.mocked(inferenceManagerMock.getServers).mockReturnValue([
+      {
+        status: 'running',
+        health: {
+          Status: 'healthy',
+        },
+        models: [
+          {
+            id: 'dummyModelId',
+            file: {
+              file: 'dummyModelFile',
+            },
+          },
+        ],
+        connection: {
+          port: 8888,
+        },
+      } as unknown as InferenceServer,
+    ]);
+    const createMock = vi.fn().mockResolvedValue([]);
+    vi.mocked(OpenAI).mockReturnValue({
+      chat: {
+        completions: {
+          create: createMock,
+        },
+      },
+    } as unknown as OpenAI);
+
+    const manager = new PlaygroundV2Manager(webviewMock, inferenceManagerMock, taskRegistryMock);
+    await manager.createPlayground('playground 1', { id: 'dummyModelId' } as ModelInfo, undefined, 'tracking-1');
+
+    const date = new Date(2000, 1, 1, 13);
+    vi.setSystemTime(date);
+
+    const playgrounds = manager.getPlaygrounds();
+    await manager.submit(playgrounds[0].id, 'dummyUserInput');
+
+    // Wait for assistant message to be completed
+    await vi.waitFor(() => {
+      expect(manager.getConversations()[0].messages[1].content).toBeDefined();
+    });
+
+    const messageId = manager.getConversations()[0].messages[1].id;
+    await manager.regenerate(playgrounds[0].id, messageId);
+
+    expect(manager.getConversations()[0].messages.some(message => message.id === messageId)).toBeFalsy();
+  });
+});
+
 describe('system prompt', () => {
   test('create playground with system prompt should init the conversation with one message', async () => {
     vi.mocked(inferenceManagerMock.getServers).mockReturnValue([

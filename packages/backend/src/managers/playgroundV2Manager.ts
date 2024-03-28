@@ -23,7 +23,7 @@ import type { ModelOptions } from '@shared/src/models/IModelOptions';
 import type { Stream } from 'openai/streaming';
 import { ConversationRegistry } from '../registries/conversationRegistry';
 import type { Conversation, PendingChat, SystemPrompt, UserChat } from '@shared/src/models/IPlaygroundMessage';
-import { isSystemPrompt } from '@shared/src/models/IPlaygroundMessage';
+import { isAssistantChat, isSystemPrompt } from '@shared/src/models/IPlaygroundMessage';
 import type { PlaygroundV2 } from '@shared/src/models/IPlaygroundV2';
 import { Publisher } from '../utils/Publisher';
 import { Messages } from '@shared/Messages';
@@ -31,6 +31,7 @@ import type { ModelInfo } from '@shared/src/models/IModelInfo';
 import { withDefaultConfiguration } from '../utils/inferenceUtils';
 import { getRandomString } from '../utils/randomUtils';
 import type { TaskRegistry } from '../registries/TaskRegistry';
+import type { InferenceServer } from '@shared/src/models/IInference';
 
 export class PlaygroundV2Manager extends Publisher<PlaygroundV2[]> implements Disposable {
   #playgrounds: Map<string, PlaygroundV2>;
@@ -174,41 +175,48 @@ export class PlaygroundV2Manager extends Publisher<PlaygroundV2[]> implements Di
           content,
         });
       } else {
-        this.#conversationRegistry.removeMessage(conversationId, conversation.messages[0].id);
+        this.#conversationRegistry.removeMessages(conversationId, conversation.messages[0].id);
       }
     } else {
       throw new Error('Cannot change system prompt on started conversation.');
     }
   }
 
+  async regenerate(conversationId: string, messageId: string, options?: ModelOptions): Promise<void> {
+    const playground = this.#playgrounds.get(conversationId);
+    if (playground === undefined) throw new Error('Playground not found.');
+
+    const conversation = this.#conversationRegistry.get(conversationId);
+    if (conversation === undefined) throw new Error(`conversation with id ${conversationId} does not exist.`);
+
+    const messageIndex = conversation.messages.findIndex(message => message.id === messageId);
+    if (messageIndex === -1) throw new Error(`Cannot find a message with id ${messageId} to regenerate.`);
+
+    if (!isAssistantChat(conversation.messages[messageIndex])) throw new Error('Only assistant chat can be replayed.');
+
+    this.#conversationRegistry.removeMessages(
+      conversationId,
+      ...conversation.messages.filter((_message, index) => index >= messageIndex).map(message => message.id),
+    );
+
+    this.execute(conversationId, this.getCorrespondingServer(playground.modelId), playground.modelId, options);
+  }
+
   /**
-   * @param playgroundId
+   * @param conversationId
    * @param userInput the user input
    * @param options the model configuration
    */
-  async submit(playgroundId: string, userInput: string, options?: ModelOptions): Promise<void> {
-    const playground = this.#playgrounds.get(playgroundId);
+  async submit(conversationId: string, userInput: string, options?: ModelOptions): Promise<void> {
+    const playground = this.#playgrounds.get(conversationId);
     if (playground === undefined) throw new Error('Playground not found.');
 
-    const servers = this.inferenceManager.getServers();
-    const server = servers.find(s => s.models.map(mi => mi.id).includes(playground.modelId));
-    if (server === undefined) throw new Error('Inference server not found.');
+    const server = this.getCorrespondingServer(playground.modelId);
 
-    if (server.status !== 'running') throw new Error('Inference server is not running.');
+    const conversation = this.#conversationRegistry.get(conversationId);
+    if (conversation === undefined) throw new Error(`conversation with id ${conversationId} does not exist.`);
 
-    if (server.health?.Status !== 'healthy')
-      throw new Error(`Inference server is not healthy, currently status: ${server.health.Status}.`);
-
-    const modelInfo = server.models.find(model => model.id === playground.modelId);
-    if (modelInfo === undefined)
-      throw new Error(
-        `modelId '${playground.modelId}' is not available on the inference server, valid model ids are: ${server.models.map(model => model.id).join(', ')}.`,
-      );
-
-    const conversation = this.#conversationRegistry.get(playground.id);
-    if (conversation === undefined) throw new Error(`conversation with id ${playground.id} does not exist.`);
-
-    this.#conversationRegistry.submit(conversation.id, {
+    this.#conversationRegistry.submit(conversationId, {
       content: userInput,
       options: options,
       role: 'user',
@@ -216,21 +224,43 @@ export class PlaygroundV2Manager extends Publisher<PlaygroundV2[]> implements Di
       timestamp: Date.now(),
     } as UserChat);
 
+    this.execute(conversationId, server, playground.modelId, options);
+  }
+
+  private getCorrespondingServer(modelId: string): InferenceServer {
+    const servers = this.inferenceManager.getServers();
+    const server = servers.find(s => s.models.map(mi => mi.id).includes(modelId));
+    if (server === undefined) throw new Error('Inference server not found.');
+
+    if (server.status !== 'running') throw new Error('Inference server is not running.');
+
+    if (server.health?.Status !== 'healthy')
+      throw new Error(`Inference server is not healthy, currently status: ${server.health.Status}.`);
+    return server;
+  }
+
+  private execute(conversationId: string, server: InferenceServer, modelId: string, options?: ModelOptions): void {
     const client = new OpenAI({
       baseURL: `http://localhost:${server.connection.port}/v1`,
       apiKey: 'dummy',
     });
 
+    const modelInfo = server.models.find(model => model.id === modelId);
+    if (modelInfo === undefined)
+      throw new Error(
+        `modelId '${modelId}' is not available on the inference server, valid model ids are: ${server.models.map(model => model.id).join(', ')}.`,
+      );
+
     client.chat.completions
       .create({
-        messages: this.getFormattedMessages(playground.id),
+        messages: this.getFormattedMessages(conversationId),
         stream: true,
         model: modelInfo.file.file,
         ...options,
       })
       .then(response => {
         // process stream async
-        this.processStream(playground.id, response).catch((err: unknown) => {
+        this.processStream(conversationId, response).catch((err: unknown) => {
           console.error('Something went wrong while processing stream', err);
         });
       })
