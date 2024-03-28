@@ -17,11 +17,12 @@
  ***********************************************************************/
 import { beforeEach, expect, test, vi } from 'vitest';
 import { CancellationTokenRegistry } from './CancellationTokenRegistry';
-import { EventEmitter } from '@podman-desktop/api';
+import { CancellationTokenSource, EventEmitter } from '@podman-desktop/api';
 
 vi.mock('@podman-desktop/api', async () => {
   return {
     EventEmitter: vi.fn(),
+    CancellationTokenSource: vi.fn(),
   };
 });
 
@@ -40,6 +41,15 @@ beforeEach(() => {
       listeners.forEach(listener => listener(content));
     }),
   } as unknown as EventEmitter<unknown>);
+
+  vi.mocked(CancellationTokenSource).mockReturnValue({
+    cancel: vi.fn(),
+    dispose: vi.fn(),
+    token: {
+      isCancellationRequested: false,
+      onCancellationRequested: vi.fn(),
+    },
+  });
 });
 
 test('created token should be retrievable', () => {
@@ -56,56 +66,22 @@ test('created token should not be cancelled', () => {
   expect(source.token.isCancellationRequested).toBeFalsy();
 });
 
-test('token should call listener on cancel request', () => {
+test('cancel token should be removed from registry', () => {
   const registry = new CancellationTokenRegistry();
-  const source = registry.getCancellationTokenSource(registry.createCancellationTokenSource());
-  const listener = vi.fn();
-  source.token.onCancellationRequested(listener);
-  source.cancel();
+  const tokenId = registry.createCancellationTokenSource();
 
-  expect(listener).toHaveBeenCalledOnce();
-});
+  expect(registry.hasCancellationTokenSource(tokenId)).toBeTruthy();
 
-test('disposing without cancel the token should not emit event', () => {
-  const registry = new CancellationTokenRegistry();
-  const source = registry.getCancellationTokenSource(registry.createCancellationTokenSource());
-  const listener = vi.fn();
-  source.token.onCancellationRequested(listener);
-  source.dispose(false);
+  registry.cancel(tokenId);
 
-  expect(listener).not.toHaveBeenCalled();
-});
-
-test('disposing with cancel the token should emit event', () => {
-  const registry = new CancellationTokenRegistry();
-  const source = registry.getCancellationTokenSource(registry.createCancellationTokenSource());
-  const listener = vi.fn();
-  source.token.onCancellationRequested(listener);
-  source.dispose(true);
-
-  expect(listener).toHaveBeenCalled();
-});
-
-test('all listeners should be call on cancel', () => {
-  const registry = new CancellationTokenRegistry();
-  const source = registry.getCancellationTokenSource(registry.createCancellationTokenSource());
-  const listeners = [...Array(10).keys()].map(() => vi.fn());
-  listeners.forEach(listener => {
-    source.token.onCancellationRequested(listener);
-  });
-  source.cancel();
-
-  listeners.forEach(listener => {
-    expect(listener).toHaveBeenCalled();
-  });
+  expect(registry.hasCancellationTokenSource(tokenId)).toBeFalsy();
 });
 
 test('disposing registry should dispose with cancel all tokens', () => {
   const registry = new CancellationTokenRegistry();
   const source = registry.getCancellationTokenSource(registry.createCancellationTokenSource());
-  const listener = vi.fn();
-  source.token.onCancellationRequested(listener);
 
   registry.dispose();
-  expect(listener).toHaveBeenCalled();
+  expect(source.cancel).toHaveBeenCalled();
+  expect(source.dispose).toHaveBeenCalled();
 });

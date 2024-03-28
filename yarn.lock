@@ -381,10 +381,10 @@
   resolved "https://registry.npmjs.org/@pkgjs/parseargs/-/parseargs-0.11.0.tgz"
   integrity sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==
 
-"@podman-desktop/api@^1.8.0":
-  version "1.8.0"
-  resolved "https://registry.yarnpkg.com/@podman-desktop/api/-/api-1.8.0.tgz#03205b1b1685c4208a0739d99ac23bb4c749da60"
-  integrity sha512-z+eTWLQOdhSNxz4KtgMmCaCjghCYPsXoxrMN2NZdDxwoljWmVNB7Q3X/+s1cl7r3hrjwnS6EfZzoYJWQgx9WCQ==
+"@podman-desktop/api@0.0.202403281426-8a6379d":
+  version "0.0.202403281426-8a6379d"
+  resolved "https://registry.yarnpkg.com/@podman-desktop/api/-/api-0.0.202403281426-8a6379d.tgz#eb4838c58d74e69d0b106eee90a560551ef618f6"
+  integrity sha512-td3MdAeaZu5VTfOaHPUNuQZhjHVU86TwXqYFEWakSBAZGMWe26D3zeoRfCZpNtwYzmS+8jP1Zj8vUPYiX3OhWw==
 
 "@rollup/rollup-android-arm-eabi@4.13.0":
   version "4.13.0"

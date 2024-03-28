@@ -15,16 +15,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ***********************************************************************/
-import type { CancellationTokenSource as ICancellationTokenSource, Disposable } from '@podman-desktop/api';
-import { CancellationTokenSource } from '../utils/CancellationToken';
+import { CancellationTokenSource, type Disposable } from '@podman-desktop/api';
 
 export class CancellationTokenRegistry implements Disposable {
   #callbackId: number;
-  #callbacksCancellableToken: Map<number, ICancellationTokenSource>;
+  #callbacksCancellableToken: Map<number, CancellationTokenSource>;
 
   constructor() {
     this.#callbackId = 0;
-    this.#callbacksCancellableToken = new Map<number, ICancellationTokenSource>();
+    this.#callbacksCancellableToken = new Map<number, CancellationTokenSource>();
   }
 
   createCancellationTokenSource(): number {
@@ -50,10 +49,18 @@ export class CancellationTokenRegistry implements Disposable {
     return this.#callbacksCancellableToken.has(id);
   }
 
+  cancel(tokenId: number): void {
+    if (!this.hasCancellationTokenSource(tokenId))
+      throw new Error(`Cancellation token with id ${tokenId} does not exist.`);
+    this.getCancellationTokenSource(tokenId).cancel();
+    this.#callbacksCancellableToken.delete(tokenId);
+  }
+
   dispose(): void {
-    Array.from(this.#callbacksCancellableToken.values()).map(source =>
-      (source as CancellationTokenSource).dispose(true),
-    );
+    Array.from(this.#callbacksCancellableToken.values()).forEach(source => {
+      source.cancel();
+      source.dispose();
+    });
     this.#callbacksCancellableToken.clear();
   }
 }

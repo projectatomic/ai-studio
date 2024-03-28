@@ -392,9 +392,7 @@ export class StudioApiImpl implements StudioAPI {
   }
 
   async requestCancelToken(tokenId: number): Promise<void> {
-    if (!this.cancellationTokenRegistry.hasCancellationTokenSource(tokenId))
-      throw new Error(`Cancellation token with id ${tokenId} does not exist.`);
-    this.cancellationTokenRegistry.getCancellationTokenSource(tokenId).cancel();
+    this.cancellationTokenRegistry.cancel(tokenId);
   }
 
   async requestDeleteLocalRepository(path: string): Promise<void> {
