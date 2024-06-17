@@ -18,21 +18,17 @@
 
 import '@testing-library/jest-dom/vitest';
 import { vi, test, expect, beforeEach } from 'vitest';
-import { screen, render, waitFor } from '@testing-library/svelte';
+import { screen, render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import type { ApplicationCatalog } from '@shared/src/models/IApplicationCatalog';
 import * as catalogStore from '/@/stores/catalog';
 import { readable, writable } from 'svelte/store';
 import RecipeDetails from './RecipeDetails.svelte';
-import { router } from 'tinro';
 import * as tasksStore from '../stores/tasks';
 import type { Task } from '@shared/src/models/ITask';
 
 const mocks = vi.hoisted(() => {
   return {
-    pullApplicationMock: vi.fn(),
-    getApplicationsStateMock: vi.fn(),
-    findMock: vi.fn(),
     getLocalRepositoriesMock: vi.fn(),
     getTasksMock: vi.fn(),
     openFileMock: vi.fn(),
@@ -43,8 +39,6 @@ const mocks = vi.hoisted(() => {
 vi.mock('../utils/client', async () => {
   return {
     studioClient: {
-      pullApplication: mocks.pullApplicationMock,
-      getApplicationsState: mocks.getApplicationsStateMock,
       openFile: mocks.openFileMock,
       requestDeleteLocalRepository: mocks.requestDeleteLocalRepositoryMock,
     },
@@ -81,28 +75,7 @@ vi.mock('../stores/localRepositories', () => ({
 
 const initialCatalog: ApplicationCatalog = {
   categories: [],
-  models: [
-    {
-      id: 'model1',
-      name: 'Model 1',
-      description: 'Readme for model 1',
-      hw: 'CPU',
-      registry: 'Hugging Face',
-      license: '?',
-      url: 'https://model1.example.com',
-      memory: 1000,
-    },
-    {
-      id: 'model2',
-      name: 'Model 2',
-      description: 'Readme for model 2',
-      hw: 'CPU',
-      registry: 'Civital',
-      license: '?',
-      url: '',
-      memory: 1000,
-    },
-  ],
+  models: [],
   recipes: [
     {
       id: 'recipe 1',
@@ -131,60 +104,7 @@ beforeEach(() => {
   vi.mocked(tasksStore).tasks = tasksList;
 });
 
-test('should call runApplication execution when run application button is clicked', async () => {
-  mocks.getApplicationsStateMock.mockResolvedValue([]);
-  vi.mocked(catalogStore).catalog = readable<ApplicationCatalog>(initialCatalog);
-  mocks.pullApplicationMock.mockResolvedValue(undefined);
-  render(RecipeDetails, {
-    recipeId: 'recipe 1',
-    modelId: 'model1',
-  });
-
-  const btnRunApplication = screen.getByText('Start AI App');
-  await userEvent.click(btnRunApplication);
-
-  expect(mocks.pullApplicationMock).toBeCalledWith('recipe 1', 'model1');
-});
-
-test('swap model button should move user to models tab', async () => {
-  mocks.getApplicationsStateMock.mockResolvedValue([]);
-  vi.mocked(catalogStore).catalog = readable<ApplicationCatalog>(initialCatalog);
-  const gotoMock = vi.spyOn(router, 'goto');
-  render(RecipeDetails, {
-    recipeId: 'recipe 1',
-    modelId: 'model1',
-  });
-
-  const btnSwap = screen.getByRole('button', { name: 'Go to Model' });
-  await userEvent.click(btnSwap);
-
-  expect(gotoMock).toBeCalledWith('/recipe/recipe 1/models');
-});
-
-test('swap model panel should be hidden on models tab', async () => {
-  mocks.getApplicationsStateMock.mockResolvedValue([]);
-  vi.mocked(catalogStore).catalog = readable<ApplicationCatalog>(initialCatalog);
-  render(RecipeDetails, {
-    recipeId: 'recipe 1',
-    modelId: 'model1',
-  });
-
-  // swap model panel is visible
-  const swapModelPanel = screen.getByLabelText('swap model panel');
-  expect(!swapModelPanel.classList.contains('hidden'));
-
-  // click the swap panel to switch to the model tab
-  const btnSwap = screen.getByRole('button', { name: 'Go to Model' });
-  await userEvent.click(btnSwap);
-
-  await new Promise(resolve => setTimeout(resolve, 200));
-  // the swap model panel should be hidden
-  const swapModelPanel2 = screen.getByLabelText('swap model panel');
-  expect(swapModelPanel2.classList.contains('hidden'));
-});
-
 test('button vs code should be visible if local repository is not empty', async () => {
-  mocks.getApplicationsStateMock.mockResolvedValue([]);
   mocks.getLocalRepositoriesMock.mockReturnValue([
     {
       path: 'random-path',
@@ -196,33 +116,13 @@ test('button vs code should be visible if local repository is not empty', async 
   vi.mocked(catalogStore).catalog = readable<ApplicationCatalog>(initialCatalog);
   render(RecipeDetails, {
     recipeId: 'recipe 1',
-    modelId: 'model2',
   });
 
   const button = screen.getByTitle('Open in VS Code Desktop');
   expect(button).toBeDefined();
 });
 
-test('start application button should be the only one displayed', async () => {
-  mocks.getApplicationsStateMock.mockResolvedValue([]);
-  vi.mocked(catalogStore).catalog = readable<ApplicationCatalog>(initialCatalog);
-  render(RecipeDetails, {
-    recipeId: 'recipe 1',
-    modelId: 'model1',
-  });
-
-  const btnRunApplication = screen.getByText('Start AI App');
-  expect(btnRunApplication).toBeInTheDocument();
-
-  const btnStop = screen.queryByTitle('Stop AI App');
-  expect(btnStop).toBeNull();
-
-  const btnRestart = screen.queryByTitle('Restart AI App');
-  expect(btnRestart).toBeNull();
-});
-
 test('local clone and delete local clone buttons should be visible if local repository is not empty', async () => {
-  mocks.getApplicationsStateMock.mockResolvedValue([]);
   mocks.getLocalRepositoriesMock.mockReturnValue([
     {
       path: 'random-path',
@@ -234,7 +134,6 @@ test('local clone and delete local clone buttons should be visible if local repo
   vi.mocked(catalogStore).catalog = readable<ApplicationCatalog>(initialCatalog);
   render(RecipeDetails, {
     recipeId: 'recipe 1',
-    modelId: 'model2',
   });
 
   const buttonLocalClone = screen.getByRole('button', { name: 'Local clone' });
@@ -250,92 +149,4 @@ test('local clone and delete local clone buttons should be visible if local repo
   await userEvent.click(buttonDeleteClone);
 
   expect(mocks.requestDeleteLocalRepositoryMock).toBeCalled();
-});
-
-test('delete local clone button to be disabled if running task is active', async () => {
-  const tasksList = writable<Task[]>([]);
-  vi.mocked(tasksStore).tasks = tasksList;
-  mocks.getApplicationsStateMock.mockResolvedValue([]);
-  mocks.getLocalRepositoriesMock.mockReturnValue([
-    {
-      path: 'random-path',
-      labels: {
-        'recipe-id': 'recipe 1',
-      },
-    },
-  ]);
-  vi.mocked(catalogStore).catalog = readable<ApplicationCatalog>(initialCatalog);
-
-  render(RecipeDetails, {
-    recipeId: 'recipe 1',
-    modelId: 'model2',
-  });
-
-  const buttonDeleteClone = screen.getByTitle('Delete local clone');
-  expect(buttonDeleteClone).toBeDefined();
-  expect(buttonDeleteClone).toBeInTheDocument();
-  expect(buttonDeleteClone).toBeEnabled();
-
-  tasksList.set([
-    {
-      id: 'id',
-      name: 'task',
-      labels: {
-        'recipe-id': 'recipe 1',
-        'model-id': 'model2',
-      },
-      state: 'loading',
-    },
-  ]);
-
-  await waitFor(() => {
-    expect(buttonDeleteClone).toBeDisabled();
-  });
-});
-
-test('should display app state for default model when model is the recommended', async () => {
-  mocks.getApplicationsStateMock.mockResolvedValue([
-    {
-      recipeId: 'recipe 1',
-      modelId: 'model1',
-      pod: {
-        Name: 'pod1',
-        Status: 'Running',
-      },
-    },
-  ]);
-  vi.mocked(catalogStore).catalog = readable<ApplicationCatalog>(initialCatalog);
-  render(RecipeDetails, {
-    recipeId: 'recipe 1',
-    modelId: 'model1',
-  });
-
-  await new Promise(resolve => setTimeout(resolve, 0));
-  const appStatus = screen.getByLabelText('app-status');
-  expect(appStatus.textContent).toContain('Running');
-  expect(appStatus.textContent).toContain('pod1');
-});
-
-test('should display app state for other model when model is not the recommended', async () => {
-  mocks.getApplicationsStateMock.mockResolvedValue([
-    {
-      recipeId: 'recipe 1',
-      modelId: 'model1',
-      pod: {
-        Name: 'pod1',
-        Status: 'Running',
-      },
-    },
-  ]);
-  vi.mocked(catalogStore).catalog = readable<ApplicationCatalog>(initialCatalog);
-  render(RecipeDetails, {
-    recipeId: 'recipe 1',
-    modelId: 'model2',
-  });
-
-  await new Promise(resolve => setTimeout(resolve, 0));
-  const appStatus = screen.queryByLabelText('app-status');
-  expect(appStatus).not.toBeInTheDocument();
-  const btnRunApplication = screen.getByText('Start AI App');
-  expect(btnRunApplication).toBeInTheDocument();
 });
