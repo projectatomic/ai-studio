@@ -83,7 +83,6 @@ async function submit(): Promise<void> {
 
   loading = true;
   trackingId = await studioClient.requestPullApplication(recipe.id, value.id);
-  console.log('[StartRecipe] got tracking id', trackingId);
 }
 
 let connectionInfo: ContainerConnectionInfo | undefined;
@@ -129,12 +128,12 @@ onMount(() => {
             <label for="recipe" class="pt-4 block mb-2 text-sm font-bold text-gray-400">Recipe</label>
 
             <div class="py-2 px-4 rounded-lg w-full flex flex-col bg-charcoal-900 border-charcoal-900 text-white">
-              <span>{recipe.name}</span>
+              <span aria-label="Recipe name">{recipe.name}</span>
               {#if localPath}
                 <div
                   class="bg-charcoal-600 max-w-full rounded-md p-2 mb-2 flex flex-row w-full h-min text-xs text-nowrap items-center">
                   <Fa class="mr-2" icon="{faFolder}" />
-                  <span class="overflow-x-hidden text-ellipsis max-w-full">
+                  <span aria-label="Recipe local path" class="overflow-x-hidden text-ellipsis max-w-full">
                     {localPath.path}
                   </span>
                 </div>
@@ -142,8 +141,10 @@ onMount(() => {
             </div>
 
             <!-- model form -->
-            <label for="model" class="pt-4 block mb-2 text-sm font-bold text-gray-400">Model</label>
+            <label for="select-model" class="pt-4 block mb-2 text-sm font-bold text-gray-400">Model</label>
             <Select
+              inputAttributes="{{ 'aria-label': 'Select Model' }}"
+              name="select-model"
               disabled="{loading}"
               bind:value="{value}"
               --item-color="{'var(--pd-input-field-focused-text)'}"
@@ -182,7 +183,7 @@ onMount(() => {
             {#if value && value.file === undefined}
               <div class="text-gray-800 text-sm flex items-center">
                 <Fa class="mr-2" icon="{faWarning}" />
-                <span
+                <span role="alert"
                   >The selected model will be downloaded. This action can take some time depending on your connection</span>
               </div>
             {/if}
