@@ -196,25 +196,13 @@ export class StudioApiImpl implements StudioAPI {
     return this.applicationManager.cloneApplication(recipe);
   }
 
-  async pullApplication(recipeId: string, modelId: string): Promise<void> {
+  async requestPullApplication(recipeId: string, modelId: string): Promise<string> {
     const recipe = this.catalogManager.getRecipes().find(recipe => recipe.id === recipeId);
     if (!recipe) throw new Error(`recipe with if ${recipeId} not found`);
 
     const model = this.catalogManager.getModelById(modelId);
 
-    // Do not wait for the pull application, run it separately
-    podmanDesktopApi.window
-      .withProgress({ location: podmanDesktopApi.ProgressLocation.TASK_WIDGET, title: `Pulling ${recipe.name}.` }, () =>
-        this.applicationManager.pullApplication(recipe, model),
-      )
-      .catch((err: unknown) => {
-        console.error('Something went wrong while trying to start application', err);
-        podmanDesktopApi.window
-          .showErrorMessage(`Error starting the application "${recipe.name}": ${String(err)}`)
-          .catch((err: unknown) => {
-            console.error(`Something went wrong with confirmation modals`, err);
-          });
-      });
+    return this.applicationManager.requestPullApplication(recipe, model);
   }
 
   async getModelsInfo(): Promise<ModelInfo[]> {

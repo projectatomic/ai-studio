@@ -48,7 +48,7 @@ import type { TaskRegistry } from '../registries/TaskRegistry';
 import { Publisher } from '../utils/Publisher';
 import { isQEMUMachine } from '../utils/podman';
 import { getModelPropertiesForEnvironment } from '../utils/modelsUtils';
-import { getRandomName } from '../utils/randomUtils';
+import { getRandomName, getRandomString } from '../utils/randomUtils';
 import type { BuilderManager } from './recipes/BuilderManager';
 import type { PodManager } from './recipes/PodManager';
 import { SECOND } from '../workers/provider/LlamaCppPython';
@@ -96,7 +96,32 @@ export class ApplicationManager extends Publisher<ApplicationState[]> implements
     this.#disposables = [];
   }
 
-  async pullApplication(recipe: Recipe, model: ModelInfo): Promise<void> {
+  async requestPullApplication(recipe: Recipe, model: ModelInfo): Promise<string> {
+    // create a tracking id to put in the labels
+    const trackingId: string = getRandomString();
+
+    const labels: Record<string, string> = {
+      trackingId: trackingId,
+    };
+
+    const task = this.taskRegistry.createTask(`Pulling ${recipe.name} recipe`, 'loading', labels);
+
+    this.pullApplication(recipe, model, labels)
+      .then(() => {
+        task.state = 'success';
+      })
+      .catch((err: unknown) => {
+        task.state = 'error';
+        task.error = `Something went wrong while pulling ${recipe.name}: ${String(err)}`;
+      })
+      .finally(() => {
+        this.taskRegistry.updateTask(task);
+      });
+
+    return trackingId;
+  }
+
+  async pullApplication(recipe: Recipe, model: ModelInfo, labels: Record<string, string> = {}): Promise<void> {
     // clear any existing status / tasks related to the pair recipeId-modelId.
     this.taskRegistry.deleteByLabels({
       'recipe-id': recipe.id,
@@ -106,9 +131,10 @@ export class ApplicationManager extends Publisher<ApplicationState[]> implements
     const startTime = performance.now();
     try {
       // init application (git clone, models download etc.)
-      const podInfo: PodInfo = await this.initApplication(recipe, model);
+      const podInfo: PodInfo = await this.initApplication(recipe, model, labels);
       // start the pod
       await this.runApplication(podInfo, {
+        ...labels,
         'recipe-id': recipe.id,
         'model-id': model.id,
       });
@@ -164,13 +190,18 @@ export class ApplicationManager extends Publisher<ApplicationState[]> implements
    *
    * @param recipe
    * @param model
+   * @param labels
    * @private
    */
-  private async initApplication(recipe: Recipe, model: ModelInfo): Promise<PodInfo> {
+  private async initApplication(
+    recipe: Recipe,
+    model: ModelInfo,
+    labels: Record<string, string> = {},
+  ): Promise<PodInfo> {
     const localFolder = path.join(this.appUserDirectory, recipe.id);
 
     // clone the application
-    await this.cloneApplication(recipe, { 'model-id': model.id });
+    await this.cloneApplication(recipe, { ...labels, 'model-id': model.id });
 
     // load and parse the recipe configuration file and filter containers based on architecture, gpu accelerator
     // and backend (that define which model supports)
@@ -178,12 +209,14 @@ export class ApplicationManager extends Publisher<ApplicationState[]> implements
 
     // get model by downloading it or retrieving locally
     await this.modelsManager.requestDownloadModel(model, {
+      ...labels,
       'recipe-id': recipe.id,
       'model-id': model.id,
     });
 
     // upload model to podman machine if user system is supported
     const modelPath = await this.modelsManager.uploadModelToPodmanMachine(model, {
+      ...labels,
       'recipe-id': recipe.id,
       'model-id': model.id,
     });
@@ -194,6 +227,7 @@ export class ApplicationManager extends Publisher<ApplicationState[]> implements
       configAndFilteredContainers.containers,
       configAndFilteredContainers.aiConfigFile.path,
       {
+        ...labels,
         'recipe-id': recipe.id,
         'model-id': model.id,
       },
@@ -206,6 +240,7 @@ export class ApplicationManager extends Publisher<ApplicationState[]> implements
 
     // create a pod containing all the containers to run the application
     return this.createApplicationPod(recipe, model, images, modelPath, {
+      ...labels,
       'recipe-id': recipe.id,
       'model-id': model.id,
     });

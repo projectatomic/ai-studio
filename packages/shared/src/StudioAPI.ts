@@ -42,7 +42,15 @@ export abstract class StudioAPI {
    * @param recipeId
    */
   abstract cloneApplication(recipeId: string): Promise<void>;
-  abstract pullApplication(recipeId: string, modelId: string): Promise<void>;
+
+  /**
+   * Pull an application (clone, download model, build container, start pod)
+   * @param recipeId
+   * @param modelId
+   *
+   * @return a promise with a tracking id used in each task labels
+   */
+  abstract requestPullApplication(recipeId: string, modelId: string): Promise<string>;
   abstract requestStopApplication(recipeId: string, modelId: string): Promise<void>;
   abstract requestStartApplication(recipeId: string, modelId: string): Promise<void>;
   abstract requestRemoveApplication(recipeId: string, modelId: string): Promise<void>;
