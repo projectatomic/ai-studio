@@ -191,7 +191,7 @@ onMount(() => {
               class="!bg-charcoal-900 !text-white !border-charcoal-900"
               items="{models.map(model => ({ ...model, value: model.id, label: model.name }))}"
               showChevron>
-              <div slot="item" let:item let:index>
+              <div slot="item" let:item>
                 <div class="flex items-center">
                   <div class="grow">
                     <span>{item.name}</span>
