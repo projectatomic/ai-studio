@@ -25,6 +25,7 @@ import type { Recipe } from '@shared/src/models/IRecipe';
 import { InferenceType } from '@shared/src/models/IInference';
 import type { ModelInfo } from '@shared/src/models/IModelInfo';
 import type { Task } from '@shared/src/models/ITask';
+import { router } from 'tinro';
 
 const mocks = vi.hoisted(() => {
   return {
@@ -86,6 +87,9 @@ vi.mock('/@/stores/catalog', async () => {
 vi.mock('tinro', () => ({
   router: {
     goto: vi.fn(),
+    location: {
+      query: new Map(),
+    },
   },
 }));
 
@@ -123,6 +127,9 @@ const fakeRemoteModel: ModelInfo = {
 
 beforeEach(() => {
   vi.resetAllMocks();
+
+  // reset all query between tests
+  router.location.query.clear();
 
   mocks.getCatalogMock.mockReturnValue({
     recipes: [fakeRecipe],
@@ -288,5 +295,52 @@ test('Loading task should make the submit button disabled', async () => {
 
   await vi.waitFor(() => {
     expect(button).toBeDefined();
+  });
+});
+
+test('trackingId in router query should use it to display related tasks', () => {
+  mocks.getTasksMock.mockReturnValue([
+    {
+      id: 'dummy-task-id',
+      name: 'Dummy task',
+      state: 'loading',
+      labels: {
+        trackingId: 'fake-tracking-id',
+      },
+    } as Task,
+  ]);
+
+  router.location.query.set('trackingId', 'fake-tracking-id');
+
+  render(StartRecipe, {
+    recipeId: 'dummy-recipe-id',
+  });
+  const button = screen.getByTitle(`Start ${fakeRecipe.name} recipe`);
+  expect(button).toBeDisabled();
+});
+
+test('restoring page should use model-id from tasks to restore the value in the select input', async () => {
+  mocks.getTasksMock.mockReturnValue([
+    {
+      id: 'dummy-task-id',
+      name: 'Dummy task',
+      state: 'loading',
+      labels: {
+        trackingId: 'fake-tracking-id',
+        'model-id': fakeRecommendedModel.id,
+      },
+    } as Task,
+  ]);
+
+  router.location.query.set('trackingId', 'fake-tracking-id');
+
+  const { container } = render(StartRecipe, {
+    recipeId: 'dummy-recipe-id',
+  });
+
+  return await vi.waitFor(() => {
+    const input = container.querySelector('input[name="select-model"][type="hidden"]');
+    if (!input) throw new Error('input not found');
+    expect(JSON.parse((input as HTMLInputElement).value).label).toBe(fakeRecommendedModel.name);
   });
 });

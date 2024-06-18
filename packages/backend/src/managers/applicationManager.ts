@@ -20,7 +20,7 @@ import type { Recipe } from '@shared/src/models/IRecipe';
 import type { GitCloneInfo, GitManager } from './gitManager';
 import fs from 'fs';
 import * as path from 'node:path';
-import { containerEngine, Disposable } from '@podman-desktop/api';
+import { containerEngine, Disposable, window, ProgressLocation } from '@podman-desktop/api';
 import type {
   PodCreatePortOptions,
   TelemetryLogger,
@@ -106,7 +106,10 @@ export class ApplicationManager extends Publisher<ApplicationState[]> implements
 
     const task = this.taskRegistry.createTask(`Pulling ${recipe.name} recipe`, 'loading', labels);
 
-    this.pullApplication(recipe, model, labels)
+    window
+      .withProgress({ location: ProgressLocation.TASK_WIDGET, title: `Pulling ${recipe.name}.` }, () =>
+        this.pullApplication(recipe, model, labels),
+      )
       .then(() => {
         task.state = 'success';
       })

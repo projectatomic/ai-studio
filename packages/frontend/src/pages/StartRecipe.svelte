@@ -76,13 +76,35 @@ const processTasks = (tasks: Task[]) => {
 
   // if all task are successful
   completed = trackedTasks.every(task => task.state === 'success');
+
+  // if we re-open the page, we might need to restore the model selected
+  populateModelFromTasks();
 };
+
+// This method uses the trackedTasks to restore the selected value of model
+// It is useful when the page has been restored
+function populateModelFromTasks(): void {
+  // if we already have a value for the model keep it
+  if (value) return;
+
+  const task = trackedTasks.find(
+    task => task.labels && 'model-id' in task.labels && typeof task.labels['model-id'] === 'string',
+  );
+  const modelId = task?.labels?.['model-id'];
+  if (!modelId) return;
+
+  const model = models.find(model => model.id === modelId);
+  if (!model) return;
+
+  value = { ...model, label: model.name, value: model.id };
+}
 
 async function submit(): Promise<void> {
   if (!recipe || !value) return;
 
   loading = true;
   trackingId = await studioClient.requestPullApplication(recipe.id, value.id);
+  router.location.query.set('trackingId', trackingId);
 }
 
 let connectionInfo: ContainerConnectionInfo | undefined;
@@ -93,6 +115,12 @@ $: if (value) {
 }
 
 onMount(() => {
+  // Fetch any trackingId we could recover from query
+  const query = router.location.query.get('trackingId');
+  if (typeof query === 'string' && query.length > 0) {
+    trackingId = query;
+  }
+
   return tasks.subscribe(tasks => {
     processTasks(tasks);
   });
