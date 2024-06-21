@@ -42,7 +42,7 @@ export function goToUpPage(): void {
       <Fa size="1.125x" class="text-[var(--pd-content-header-icon)]" icon="{getIcon(recipe?.icon)}" />
     </div>
   </svelte:fragment>
-  <svelte:fragment slot="additional-actions">
+  <svelte:fragment slot="actions">
     <Button on:click="{() => router.goto(`/recipe/${recipeId}/start`)}" icon="{faRocket}" aria-label="Start recipe"
       >Start</Button>
   </svelte:fragment>
