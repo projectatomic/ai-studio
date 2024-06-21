@@ -48,6 +48,13 @@ $: models = $modelsInfo.filter(
 // Hold the selected model
 let value: (ModelInfo & { label: string; value: string }) | undefined = undefined;
 
+$: {
+  // let's select a default model
+  if (value === undefined && recipe && models.length > 0) {
+    value = getFirstRecommended();
+  }
+}
+
 // The tracking id is a unique identifier provided by the
 // backend when calling requestPullApplication
 let trackingId: string | undefined = undefined;
@@ -60,6 +67,15 @@ let loading: boolean = false;
 
 // All tasks are successful (not any in error)
 let completed: boolean = false;
+
+const getFirstRecommended = (): (ModelInfo & { label: string; value: string }) | undefined => {
+  if (!recipe || !models) return undefined;
+  const recommended = recipe.recommended && recipe.recommended.length > 0 ? recipe.recommended[0] : undefined;
+
+  const model = models.find(model => model.id === recommended);
+  if (!model) return undefined;
+  return { ...model, label: model.name, value: model.id };
+};
 
 const processTasks = (tasks: Task[]) => {
   if (trackingId === undefined) {
@@ -84,9 +100,6 @@ const processTasks = (tasks: Task[]) => {
 // This method uses the trackedTasks to restore the selected value of model
 // It is useful when the page has been restored
 function populateModelFromTasks(): void {
-  // if we already have a value for the model keep it
-  if (value) return;
-
   const task = trackedTasks.find(
     task => task.labels && 'model-id' in task.labels && typeof task.labels['model-id'] === 'string',
   );
@@ -174,7 +187,8 @@ onMount(() => {
               inputAttributes="{{ 'aria-label': 'Select Model' }}"
               name="select-model"
               disabled="{loading}"
-              bind:value="{value}"
+              value="{value}"
+              on:change="{e => (value = e.detail)}"
               --item-color="{'var(--pd-input-field-focused-text)'}"
               --item-is-active-color="{'var(--pd-input-field-focused-text)'}"
               --item-hover-color="var(--pd-input-field-focused-text)"
@@ -182,7 +196,7 @@ onMount(() => {
               --item-is-active-bg="var(--pd-input-field-hover-stroke)"
               --background="{'var(--pd-input-field-focused-bg)'}"
               --list-background="{'var(--pd-input-field-focused-bg)'}"
-              --item-hover-bg="var(--pd-input-field-hover-stroke)"
+              --item-hover-bg="var(--pd-action-button-hover-bg)"
               --border="1px solid var(--pd-input-field-focused-bg)"
               --border-hover="1px solid var(--pd-input-field-hover-stroke)"
               --list-border="1px solid var(--pd-input-field-focused-bg)"

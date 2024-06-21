@@ -180,6 +180,8 @@ test('Recipe Local Repository should be visible when defined', async () => {
 });
 
 test('Submit button should be disabled when no model is selected', async () => {
+  mocks.getModelsInfoMock.mockReturnValue([]);
+
   render(StartRecipe, {
     recipeId: 'dummy-recipe-id',
   });
@@ -189,6 +191,28 @@ test('Submit button should be disabled when no model is selected', async () => {
   expect(button).toBeDisabled();
 });
 
+test('First recommended model should be selected as default model', async () => {
+  const { container } = render(StartRecipe, {
+    recipeId: 'dummy-recipe-id',
+  });
+
+  await vi.waitFor(() => {
+    const option = getSelectedOption<{ value: string }>(container);
+    expect(option?.value).toBe(fakeRecommendedModel.id);
+  });
+});
+
+/**
+ * Return the selected value
+ * @param container
+ */
+function getSelectedOption<T>(container: HTMLElement): T | undefined {
+  const input = container.querySelector('input[name="select-model"][type="hidden"]');
+  if (!input) throw new Error('input not found');
+  if ((input as HTMLInputElement).value === undefined) return undefined;
+  return JSON.parse((input as HTMLInputElement).value);
+}
+
 /**
  * Utility method to select an option in the svelte-select component
  * @param container
@@ -196,7 +220,7 @@ test('Submit button should be disabled when no model is selected', async () => {
  */
 async function selectOption(container: HTMLElement, label: string): Promise<void> {
   // first get the select input
-  const input = screen.getByPlaceholderText('Select model to use');
+  const input = screen.getByLabelText('Select Model');
   await fireEvent.pointerUp(input); // they are using the pointer up event instead of click.
 
   // get all options available
@@ -212,9 +236,8 @@ async function selectOption(container: HTMLElement, label: string): Promise<void
   await fireEvent.click(remoteModelOption);
 
   return await vi.waitFor(() => {
-    const input = container.querySelector('input[name="select-model"][type="hidden"]');
-    if (!input) throw new Error('input not found');
-    expect(JSON.parse((input as HTMLInputElement).value).label).toBe(label);
+    const value = getSelectedOption<{ label: string }>(container);
+    expect(value?.label).toBe(label);
   });
 }
 
