@@ -23,12 +23,11 @@
         "ai-lab.experimentalGPU": {
           "type": "boolean",
           "default": false,
-          "hidden": true,
           "description": "Experimental GPU support for inference servers",
           "when": "isWindows"
         }
       }
-    },
+     },
     "icons": {
       "brain-icon": {
         "description": "Brain icon",

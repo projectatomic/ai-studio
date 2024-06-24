@@ -101,6 +101,7 @@ export async function withDefaultConfiguration(
     modelsInfo: options.modelsInfo,
     providerId: options.providerId,
     inferenceProvider: options.inferenceProvider,
+    gpuLayers: options.gpuLayers,
   };
 }
 

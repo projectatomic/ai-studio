@@ -15,6 +15,7 @@ import ContainerConnectionStatusInfo from '../lib/notification/ContainerConnecti
 import type { ContainerConnectionInfo } from '@shared/src/models/IContainerConnectionInfo';
 import { checkContainerConnectionStatus } from '../utils/connectionUtils';
 import { Button, ErrorMessage, FormPage } from '@podman-desktop/ui-svelte';
+import { configuration } from '/@/stores/extensionConfiguration';
 
 // List of the models available locally
 let localModels: ModelInfo[];
@@ -24,6 +25,9 @@ $: localModels = $modelsInfo.filter(model => model.file);
 let containerPort: number | undefined = undefined;
 // The modelId is the bind value to form input
 let modelId: string | undefined = undefined;
+// number of
+let gpuLayers: number = 0;
+
 // If the creation of a new inference service fail
 let errorMsg: string | undefined = undefined;
 
@@ -43,6 +47,9 @@ $: available = containerId && $inferenceServers.some(server => server.container.
 
 $: loading = trackingId !== undefined && !error;
 
+let gpuEnabled: boolean;
+$: gpuEnabled = $configuration?.experimentalGPU ?? false;
+
 let connectionInfo: ContainerConnectionInfo | undefined;
 $: if (localModels && modelId) {
   checkContainerConnectionStatus(localModels, modelId, 'inference')
@@ -60,6 +67,16 @@ const onContainerPortInput = (event: Event): void => {
   }
 };
 
+const onGPULayersInput = (event: Event): void => {
+  const raw = (event.target as HTMLInputElement).value;
+  try {
+    gpuLayers = parseInt(raw);
+  } catch (e: unknown) {
+    console.warn('invalid value for gpu layers', e);
+    gpuLayers = 0;
+  }
+}
+
 // Submit method when the form is valid
 const submit = async () => {
   errorMsg = undefined;
@@ -72,6 +89,7 @@ const submit = async () => {
     trackingId = await studioClient.requestCreateInferenceServer({
       modelsInfo: [model],
       port: containerPort,
+      gpuLayers: gpuLayers,
     });
   } catch (err: unknown) {
     trackingId = undefined;
@@ -199,6 +217,20 @@ export function goToUpPage(): void {
             aria-label="Port input"
             disabled="{loading}"
             required />
+          <!-- GPU section -->
+          {#if gpuEnabled}
+            <label for="gpuOffloading" class="pt-4 block mb-2 text-sm font-bold text-gray-400">GPU Offloading</label>
+            <input
+              type="number"
+              bind:value="{gpuLayers}"
+              on:input="{onGPULayersInput}"
+              class="w-full p-2 outline-none text-sm bg-charcoal-600 rounded-sm text-gray-700 placeholder-gray-700"
+              placeholder="0 to disabled"
+              name="gpuOffloading"
+              aria-label="GPU Offloading"
+              disabled="{loading}"
+              required />
+          {/if}
         </div>
         {#if errorMsg !== undefined}
           <ErrorMessage error="{errorMsg}" />

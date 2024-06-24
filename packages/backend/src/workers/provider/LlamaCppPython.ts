@@ -15,7 +15,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ***********************************************************************/
-import type { ContainerCreateOptions, ImageInfo } from '@podman-desktop/api';
+import type { ContainerCreateOptions, DeviceRequest, ImageInfo, MountConfig } from '@podman-desktop/api';
 import type { InferenceServerConfig } from '@shared/src/models/InferenceServerConfig';
 import { type BetterContainerCreateResult, InferenceProvider } from './InferenceProvider';
 import { getModelPropertiesForEnvironment } from '../../utils/modelsUtils';
@@ -23,15 +23,23 @@ import { DISABLE_SELINUX_LABEL_SECURITY_OPTION } from '../../utils/utils';
 import { LABEL_INFERENCE_SERVER } from '../../utils/inferenceUtils';
 import type { TaskRegistry } from '../../registries/TaskRegistry';
 import { InferenceType } from '@shared/src/models/IInference';
+import type { GPUManager } from '../../managers/GPUManager';
+import type { IGPUInfo } from '@shared/src/models/IGPUInfo';
 
-export const LLAMA_CPP_INFERENCE_IMAGE =
-  'ghcr.io/containers/podman-desktop-extension-ai-lab-playground-images/ai-lab-playground-chat:0.3.2';
+export const LLAMA_CPP_CPU = 'ghcr.io/containers/llamacpp_python:latest';
+export const LLAMA_CPP_CUDA = 'ghcr.io/containers/llamacpp_python_cuda:latest';
 
 export const SECOND: number = 1_000_000_000;
 
+interface Device {
+  PathOnHost: string,
+  PathInContainer: string,
+  CgroupPermissions: string,
+}
+
 export class LlamaCppPython extends InferenceProvider {
-  constructor(taskRegistry: TaskRegistry) {
-    super(taskRegistry, InferenceType.LLAMA_CPP, 'LLama-cpp (CPU)');
+  constructor(taskRegistry: TaskRegistry, private gpuManager: GPUManager) {
+    super(taskRegistry, InferenceType.LLAMA_CPP, 'LLama-cpp');
   }
 
   dispose() {}
@@ -41,6 +49,7 @@ export class LlamaCppPython extends InferenceProvider {
   protected async getContainerCreateOptions(
     config: InferenceServerConfig,
     imageInfo: ImageInfo,
+    gpu?: IGPUInfo,
   ): Promise<ContainerCreateOptions> {
     if (config.modelsInfo.length === 0) throw new Error('Need at least one model info to start an inference server.');
 
@@ -57,19 +66,62 @@ export class LlamaCppPython extends InferenceProvider {
     const envs: string[] = [`MODEL_PATH=/models/${modelInfo.file.file}`, 'HOST=0.0.0.0', 'PORT=8000'];
     envs.push(...getModelPropertiesForEnvironment(modelInfo));
 
+    const mounts: MountConfig = [
+      {
+        Target: '/models',
+        Source: modelInfo.file.path,
+        Type: 'bind',
+      },
+    ];
+
+    const deviceRequests: DeviceRequest[] = [];
+    const devices: Device[] = [];
+    let entrypoint: string | undefined = undefined;
+    let cmd: string[] = [];
+    let user: string | undefined = undefined;
+
+    if(gpu) {
+      // mounting
+      mounts.push({
+        Target: '/usr/lib/wsl',
+        Source: '/usr/lib/wsl',
+        Type: 'bind',
+      });
+
+      // adding gpu capabilities
+      deviceRequests.push( {
+        Capabilities: [['gpu']],
+        Count: -1, // -1: all
+      });
+
+      devices.push({
+        PathOnHost: '/dev/dxg',
+        PathInContainer: '/dev/dxg',
+        CgroupPermissions: 'r',
+      });
+
+      entrypoint = '/usr/bin/sh';
+      envs.push(`GPU_LAYERS=${config.gpuLayers}`);
+
+      user = '0';
+
+      cmd = [
+        '-c',
+        '/usr/bin/ln -s /usr/lib/wsl/lib/* /usr/lib64/ && PATH="${PATH}:/usr/lib/wsl/lib/" && chmod 755 ./run.sh && ./run.sh',
+      ];
+    }
+
     return {
       Image: imageInfo.Id,
       Detach: true,
+      Entrypoint: entrypoint,
+      User: user,
       ExposedPorts: { [`${config.port}`]: {} },
       HostConfig: {
         AutoRemove: false,
-        Mounts: [
-          {
-            Target: '/models',
-            Source: modelInfo.file.path,
-            Type: 'bind',
-          },
-        ],
+        Devices: devices,
+        Mounts: mounts,
+        DeviceRequests: deviceRequests,
         SecurityOpt: [DISABLE_SELINUX_LABEL_SECURITY_OPTION],
         PortBindings: {
           '8000/tcp': [
@@ -90,22 +142,32 @@ export class LlamaCppPython extends InferenceProvider {
         [LABEL_INFERENCE_SERVER]: JSON.stringify(config.modelsInfo.map(model => model.id)),
       },
       Env: envs,
-      Cmd: ['--models-path', '/models', '--context-size', '700', '--threads', '4'],
+      Cmd: cmd,
     };
   }
 
   async perform(config: InferenceServerConfig): Promise<BetterContainerCreateResult> {
     if (!this.enabled()) throw new Error('not enabled');
 
+    let gpu: IGPUInfo | undefined = undefined;
+
+    // get the first GPU if requested
+    if((config.gpuLayers ?? 0) !== 0) {
+      const gpus: IGPUInfo[] = await this.gpuManager.collectGPUs();
+      if(gpus.length === 0) throw new Error('no gpu was found.');
+      if(gpus.length > 1) console.warn(`found ${gpus.length} gpus: using multiple GPUs is not supported. Using ${gpus[0].model}.`);
+      gpu = gpus[0];
+    }
+
     // pull the image
     const imageInfo: ImageInfo = await this.pullImage(
       config.providerId,
-      config.image ?? LLAMA_CPP_INFERENCE_IMAGE,
+      config.image ?? (gpu?LLAMA_CPP_CUDA:LLAMA_CPP_CPU),
       config.labels,
     );
 
     // Get the container creation options
-    const containerCreateOptions: ContainerCreateOptions = await this.getContainerCreateOptions(config, imageInfo);
+    const containerCreateOptions: ContainerCreateOptions = await this.getContainerCreateOptions(config, imageInfo, gpu);
 
     // Create the container
     return this.createContainer(imageInfo.engineId, containerCreateOptions, config.labels);
