@@ -110,6 +110,11 @@ export class Studio {
       );
     }
 
+    /**
+     * Storage directory for the extension provided by podman desktop
+     */
+    const appUserDirectory = this.extensionContext.storagePath;
+
     this.#telemetry.logUsage('start');
 
     /**
@@ -131,7 +136,7 @@ export class Studio {
     /**
      * The configuration registry manage the extension preferences/settings
      */
-    this.#configurationRegistry = new ConfigurationRegistry(this.#panel.webview);
+    this.#configurationRegistry = new ConfigurationRegistry(this.#panel.webview, appUserDirectory);
     this.#configurationRegistry?.init();
     this.#extensionContext.subscriptions.push(this.#configurationRegistry);
 
@@ -141,8 +146,6 @@ export class Studio {
     this.#containerRegistry = new ContainerRegistry();
     this.#containerRegistry.init();
     this.#extensionContext.subscriptions.push(this.#containerRegistry);
-
-    const appUserDirectory = this.extensionContext.storagePath;
 
     /**
      * The RpcExtension handle the communication channels between the frontend and the backend
@@ -192,7 +195,7 @@ export class Studio {
      * The ModelManager role is to download and
      */
     this.#modelsManager = new ModelsManager(
-      appUserDirectory,
+      this.#configurationRegistry.getExtensionConfiguration().modelsPath,
       this.#panel.webview,
       this.#catalogManager,
       this.#telemetry,

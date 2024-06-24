@@ -19,14 +19,18 @@ import { configuration, type Configuration, type Disposable, type Webview } from
 import { Publisher } from '../utils/Publisher';
 import type { ExtensionConfiguration } from '@shared/src/models/IExtensionConfiguration';
 import { Messages } from '@shared/Messages';
+import path from 'node:path';
 
-const CONFIGURATION_SECTIONS: string[] = ['ai-lab.experimentalGPU'];
+const CONFIGURATION_SECTIONS: string[] = ['ai-lab.experimentalGPU', 'ai-lab.models.path'];
 
 export class ConfigurationRegistry extends Publisher<ExtensionConfiguration> implements Disposable {
   #configuration: Configuration;
   #configurationDisposable: Disposable | undefined;
 
-  constructor(webview: Webview) {
+  constructor(
+    webview: Webview,
+    private appUserDirectory: string,
+  ) {
     super(webview, Messages.MSG_CONFIGURATION_UPDATE, () => this.getExtensionConfiguration());
 
     this.#configuration = configuration.getConfiguration('ai-lab');
@@ -35,6 +39,7 @@ export class ConfigurationRegistry extends Publisher<ExtensionConfiguration> imp
   getExtensionConfiguration(): ExtensionConfiguration {
     return {
       experimentalGPU: this.#configuration.get<boolean>('experimentalGPU') ?? false,
+      modelsPath: this.#configuration.get<string>('models.path') ?? path.join(this.appUserDirectory, 'models'),
     };
   }
 
@@ -43,7 +48,11 @@ export class ConfigurationRegistry extends Publisher<ExtensionConfiguration> imp
   }
 
   init(): void {
-    configuration.onDidChangeConfiguration(event => {
+    for (const section of CONFIGURATION_SECTIONS) {
+      if (!this.#configuration.has(section)) throw new Error(`Missing configuration section ${section}.`);
+    }
+
+    this.#configurationDisposable = configuration.onDidChangeConfiguration(event => {
       if (CONFIGURATION_SECTIONS.some(section => event.affectsConfiguration(section))) {
         this.notify();
       }

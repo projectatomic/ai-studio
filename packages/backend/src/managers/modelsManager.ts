@@ -36,7 +36,6 @@ import type { CancellationTokenRegistry } from '../registries/CancellationTokenR
 import { hasValidSha } from '../utils/sha';
 
 export class ModelsManager implements Disposable {
-  #modelsDir: string = '';
   #models: Map<string, ModelInfo>;
   #watcher?: podmanDesktopApi.FileSystemWatcher;
   #disposables: Disposable[];
@@ -44,7 +43,7 @@ export class ModelsManager implements Disposable {
   #downloaders: Map<string, Downloader> = new Map<string, Downloader>();
 
   constructor(
-    private appUserDirectory: string,
+    private modelsDir: string,
     private webview: Webview,
     private catalogManager: CatalogManager,
     private telemetry: podmanDesktopApi.TelemetryLogger,
@@ -56,7 +55,6 @@ export class ModelsManager implements Disposable {
   }
 
   init() {
-    this.#modelsDir = this.getModelsDirectoryPath();
     const disposable = this.catalogManager.onCatalogUpdate(() => {
       this.loadLocalModels().catch((err: unknown) => {
         console.error(`Something went wrong when loading local models`, err);
@@ -75,14 +73,6 @@ export class ModelsManager implements Disposable {
     this.#disposables.forEach(d => d.dispose());
   }
 
-  getModelsDirectoryPath(): string {
-    const customDir = podmanDesktopApi.configuration.getConfiguration('ai-lab').get<string>('models.path');
-    if (!customDir) {
-      return path.join(this.appUserDirectory, 'models');
-    }
-    return customDir;
-  }
-
   async loadLocalModels() {
     this.#models.clear();
     this.catalogManager.getModels().forEach(m => this.#models.set(m.id, m));
@@ -91,7 +81,7 @@ export class ModelsManager implements Disposable {
       await this.sendModelsInfo();
     };
     if (this.#watcher === undefined) {
-      this.#watcher = apiFs.createFileSystemWatcher(this.#modelsDir);
+      this.#watcher = apiFs.createFileSystemWatcher(this.modelsDir);
       this.#watcher.onDidCreate(reloadLocalModels);
       this.#watcher.onDidDelete(reloadLocalModels);
       this.#watcher.onDidChange(reloadLocalModels);
@@ -114,14 +104,14 @@ export class ModelsManager implements Disposable {
   }
 
   getModelsDirectory(): string {
-    return this.#modelsDir;
+    return this.modelsDir;
   }
 
   getLocalModelsFromDisk(): void {
-    if (!fs.existsSync(this.#modelsDir)) {
+    if (!fs.existsSync(this.modelsDir)) {
       return;
     }
-    const entries = fs.readdirSync(this.#modelsDir, { withFileTypes: true });
+    const entries = fs.readdirSync(this.modelsDir, { withFileTypes: true });
     const dirs = entries.filter(dir => dir.isDirectory());
     for (const d of dirs) {
       const modelEntries = fs.readdirSync(path.resolve(d.path, d.name));
@@ -179,7 +169,7 @@ export class ModelsManager implements Disposable {
   }
 
   getLocalModelFolder(modelId: string): string {
-    return path.resolve(this.#modelsDir, modelId);
+    return path.resolve(this.modelsDir, modelId);
   }
 
   async deleteModel(modelId: string): Promise<void> {

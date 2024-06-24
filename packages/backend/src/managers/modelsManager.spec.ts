@@ -22,7 +22,7 @@ import fs, { type Stats, type PathLike } from 'node:fs';
 import path from 'node:path';
 import { ModelsManager } from './modelsManager';
 import { env, process as coreProcess, Disposable } from '@podman-desktop/api';
-import type { Configuration, RunResult, TelemetryLogger, Webview } from '@podman-desktop/api';
+import type { RunResult, TelemetryLogger, Webview } from '@podman-desktop/api';
 import type { CatalogManager, catalogUpdateHandle } from './catalogManager';
 import type { ModelInfo } from '@shared/src/models/IModelInfo';
 import * as utils from '../utils/utils';
@@ -50,18 +50,8 @@ vi.mock('../utils/podman', () => ({
   getPodmanCli: mocks.getPodmanCliMock,
 }));
 
-const getConfigurationMock = vi.fn().mockReturnValue('');
-const config: Configuration = {
-  get: getConfigurationMock,
-  has: () => true,
-  update: () => Promise.resolve(),
-};
-
 vi.mock('@podman-desktop/api', () => {
   return {
-    configuration: {
-      getConfiguration: (): Configuration => config,
-    },
     Disposable: {
       create: vi.fn(),
     },
@@ -165,14 +155,14 @@ function mockFiles(now: Date) {
 test('getModelsInfo should get models in local directory', async () => {
   const now = new Date();
   mockFiles(now);
-  let appdir: string;
+  let modelsDir: string;
   if (process.platform === 'win32') {
-    appdir = 'C:\\home\\user\\aistudio';
+    modelsDir = 'C:\\home\\user\\aistudio\\models';
   } else {
-    appdir = '/home/user/aistudio';
+    modelsDir = '/home/user/aistudio/models';
   }
   const manager = new ModelsManager(
-    appdir,
+    modelsDir,
     {
       postMessage: vi.fn(),
     } as unknown as Webview,
@@ -221,14 +211,14 @@ test('getModelsInfo should return an empty array if the models folder does not e
   vi.spyOn(os, 'homedir').mockReturnValue('/home/user');
   const existsSyncSpy = vi.spyOn(fs, 'existsSync');
   existsSyncSpy.mockReturnValue(false);
-  let appdir: string;
+  let modelsDir: string;
   if (process.platform === 'win32') {
-    appdir = 'C:\\home\\user\\aistudio';
+    modelsDir = 'C:\\home\\user\\aistudio\\models';
   } else {
-    appdir = '/home/user/aistudio';
+    modelsDir = '/home/user/aistudio/models';
   }
   const manager = new ModelsManager(
-    appdir,
+    modelsDir,
     {} as Webview,
     {
       getModels(): ModelInfo[] {
@@ -261,14 +251,14 @@ test('getLocalModelsFromDisk should return undefined Date and size when stat fai
     return { isDirectory: () => true } as Stats;
   });
 
-  let appdir: string;
+  let modelsDir: string;
   if (process.platform === 'win32') {
-    appdir = 'C:\\home\\user\\aistudio';
+    modelsDir = 'C:\\home\\user\\aistudio\\models';
   } else {
-    appdir = '/home/user/aistudio';
+    modelsDir = '/home/user/aistudio/models';
   }
   const manager = new ModelsManager(
-    appdir,
+    modelsDir,
     {
       postMessage: vi.fn(),
     } as unknown as Webview,
@@ -322,14 +312,14 @@ test('getLocalModelsFromDisk should skip folders containing tmp files', async ()
     }
   });
 
-  let appdir: string;
+  let modelsDir: string;
   if (process.platform === 'win32') {
-    appdir = 'C:\\home\\user\\aistudio';
+    modelsDir = 'C:\\home\\user\\aistudio\\models';
   } else {
-    appdir = '/home/user/aistudio';
+    modelsDir = '/home/user/aistudio/models';
   }
   const manager = new ModelsManager(
-    appdir,
+    modelsDir,
     {
       postMessage: vi.fn(),
     } as unknown as Webview,
@@ -360,14 +350,14 @@ test('loadLocalModels should post a message with the message on disk and on cata
   mockFiles(now);
 
   const postMessageMock = vi.fn();
-  let appdir: string;
+  let modelsDir: string;
   if (process.platform === 'win32') {
-    appdir = 'C:\\home\\user\\aistudio';
+    modelsDir = 'C:\\home\\user\\aistudio\\models';
   } else {
-    appdir = '/home/user/aistudio';
+    modelsDir = '/home/user/aistudio/models';
   }
   const manager = new ModelsManager(
-    appdir,
+    modelsDir,
     {
       postMessage: postMessageMock,
     } as unknown as Webview,
@@ -406,11 +396,11 @@ test('loadLocalModels should post a message with the message on disk and on cata
 });
 
 test('deleteModel deletes the model folder', async () => {
-  let appdir: string;
+  let modelsDir: string;
   if (process.platform === 'win32') {
-    appdir = 'C:\\home\\user\\aistudio';
+    modelsDir = 'C:\\home\\user\\aistudio\\models';
   } else {
-    appdir = '/home/user/aistudio';
+    modelsDir = '/home/user/aistudio/';
   }
   const now = new Date();
   mockFiles(now);
@@ -418,7 +408,7 @@ test('deleteModel deletes the model folder', async () => {
   rmSpy.mockResolvedValue();
   const postMessageMock = vi.fn();
   const manager = new ModelsManager(
-    appdir,
+    modelsDir,
     {
       postMessage: postMessageMock,
     } as unknown as Webview,
@@ -472,11 +462,11 @@ test('deleteModel deletes the model folder', async () => {
 
 describe('deleting models', () => {
   test('deleteModel fails to delete the model folder', async () => {
-    let appdir: string;
+    let modelsDir: string;
     if (process.platform === 'win32') {
-      appdir = 'C:\\home\\user\\aistudio';
+      modelsDir = 'C:\\home\\user\\aistudio\\models';
     } else {
-      appdir = '/home/user/aistudio';
+      modelsDir = '/home/user/aistudio/models';
     }
     const now = new Date();
     mockFiles(now);
@@ -484,7 +474,7 @@ describe('deleting models', () => {
     rmSpy.mockRejectedValue(new Error('failed'));
     const postMessageMock = vi.fn();
     const manager = new ModelsManager(
-      appdir,
+      modelsDir,
       {
         postMessage: postMessageMock,
       } as unknown as Webview,
@@ -844,42 +834,4 @@ describe('downloadModel', () => {
     expect(mocks.performDownloadMock).toHaveBeenCalledTimes(1);
     expect(mocks.onEventDownloadMock).toHaveBeenCalledTimes(2);
   });
-});
-
-test('download directory should be equals to the one set in the settings', async () => {
-  const now = new Date();
-  mockFiles(now);
-
-  getConfigurationMock.mockReturnValue('/my_custom_directory');
-  const postMessageMock = vi.fn();
-  let appdir: string;
-  if (process.platform === 'win32') {
-    appdir = 'C:\\home\\user\\aistudio';
-  } else {
-    appdir = '/home/user/aistudio';
-  }
-  const manager = new ModelsManager(
-    appdir,
-    {
-      postMessage: postMessageMock,
-    } as unknown as Webview,
-    {
-      getModels: () => {
-        return [
-          {
-            id: 'model-id-1',
-          },
-        ] as ModelInfo[];
-      },
-      onCatalogUpdate(_listener: catalogUpdateHandle): Disposable {
-        return Disposable.create(() => {});
-      },
-    } as CatalogManager,
-    telemetryLogger,
-    taskRegistry,
-    cancellationTokenRegistryMock,
-  );
-  manager.init();
-  const directory = manager.getModelsDirectory();
-  expect(directory).equals('/my_custom_directory');
 });
