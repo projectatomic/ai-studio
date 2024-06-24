@@ -400,7 +400,7 @@ test('deleteModel deletes the model folder', async () => {
   if (process.platform === 'win32') {
     modelsDir = 'C:\\home\\user\\aistudio\\models';
   } else {
-    modelsDir = '/home/user/aistudio/';
+    modelsDir = '/home/user/aistudio/models';
   }
   const now = new Date();
   mockFiles(now);

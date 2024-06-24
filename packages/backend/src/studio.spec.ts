@@ -50,6 +50,12 @@ vi.mock('../package.json', () => ({
 
 vi.mock('@podman-desktop/api', async () => {
   return {
+    configuration: {
+      getConfiguration: () => ({
+        get: vi.fn(),
+      }),
+      onDidChangeConfiguration: vi.fn(),
+    },
     version: '1.8.0',
     fs: {
       createFileSystemWatcher: () => ({
