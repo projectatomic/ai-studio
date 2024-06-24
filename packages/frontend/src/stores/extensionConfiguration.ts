@@ -22,15 +22,18 @@ import { Messages } from '@shared/Messages';
 import { rpcBrowser, studioClient } from '/@/utils/client';
 import type { ExtensionConfiguration } from '@shared/src/models/IExtensionConfiguration';
 
-export const configuration: Readable<ExtensionConfiguration | undefined> = readable<ExtensionConfiguration>(undefined, set => {
-  const sub = rpcBrowser.subscribe(Messages.MSG_CONFIGURATION_UPDATE, msg => {
-    set(msg);
-  });
-  // Initialize the store manually
-  studioClient.getExtensionConfiguration().then(state => {
-    set(state);
-  });
-  return () => {
-    sub.unsubscribe();
-  };
-});
+export const configuration: Readable<ExtensionConfiguration | undefined> = readable<ExtensionConfiguration>(
+  undefined,
+  set => {
+    const sub = rpcBrowser.subscribe(Messages.MSG_CONFIGURATION_UPDATE, msg => {
+      set(msg);
+    });
+    // Initialize the store manually
+    studioClient.getExtensionConfiguration().then(state => {
+      set(state);
+    });
+    return () => {
+      sub.unsubscribe();
+    };
+  },
+);

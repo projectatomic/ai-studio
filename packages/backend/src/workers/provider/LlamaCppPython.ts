@@ -32,13 +32,16 @@ export const LLAMA_CPP_CUDA = 'ghcr.io/containers/llamacpp_python_cuda:latest';
 export const SECOND: number = 1_000_000_000;
 
 interface Device {
-  PathOnHost: string,
-  PathInContainer: string,
-  CgroupPermissions: string,
+  PathOnHost: string;
+  PathInContainer: string;
+  CgroupPermissions: string;
 }
 
 export class LlamaCppPython extends InferenceProvider {
-  constructor(taskRegistry: TaskRegistry, private gpuManager: GPUManager) {
+  constructor(
+    taskRegistry: TaskRegistry,
+    private gpuManager: GPUManager,
+  ) {
     super(taskRegistry, InferenceType.LLAMA_CPP, 'LLama-cpp');
   }
 
@@ -80,8 +83,8 @@ export class LlamaCppPython extends InferenceProvider {
     let cmd: string[] = [];
     let user: string | undefined = undefined;
 
-    if(gpu) {
-      // mounting
+    // specific to WSL
+    if (gpu) {
       mounts.push({
         Target: '/usr/lib/wsl',
         Source: '/usr/lib/wsl',
@@ -89,7 +92,7 @@ export class LlamaCppPython extends InferenceProvider {
       });
 
       // adding gpu capabilities
-      deviceRequests.push( {
+      deviceRequests.push({
         Capabilities: [['gpu']],
         Count: -1, // -1: all
       });
@@ -152,17 +155,18 @@ export class LlamaCppPython extends InferenceProvider {
     let gpu: IGPUInfo | undefined = undefined;
 
     // get the first GPU if requested
-    if((config.gpuLayers ?? 0) !== 0) {
+    if ((config.gpuLayers ?? 0) !== 0) {
       const gpus: IGPUInfo[] = await this.gpuManager.collectGPUs();
-      if(gpus.length === 0) throw new Error('no gpu was found.');
-      if(gpus.length > 1) console.warn(`found ${gpus.length} gpus: using multiple GPUs is not supported. Using ${gpus[0].model}.`);
+      if (gpus.length === 0) throw new Error('no gpu was found.');
+      if (gpus.length > 1)
+        console.warn(`found ${gpus.length} gpus: using multiple GPUs is not supported. Using ${gpus[0].model}.`);
       gpu = gpus[0];
     }
 
     // pull the image
     const imageInfo: ImageInfo = await this.pullImage(
       config.providerId,
-      config.image ?? (gpu?LLAMA_CPP_CUDA:LLAMA_CPP_CPU),
+      config.image ?? (gpu ? LLAMA_CPP_CUDA : LLAMA_CPP_CPU),
       config.labels,
     );
 

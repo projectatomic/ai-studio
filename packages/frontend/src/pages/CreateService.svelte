@@ -75,7 +75,7 @@ const onGPULayersInput = (event: Event): void => {
     console.warn('invalid value for gpu layers', e);
     gpuLayers = 0;
   }
-}
+};
 
 // Submit method when the form is valid
 const submit = async () => {
