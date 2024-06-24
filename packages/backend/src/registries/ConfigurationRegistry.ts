@@ -48,10 +48,6 @@ export class ConfigurationRegistry extends Publisher<ExtensionConfiguration> imp
   }
 
   init(): void {
-    for (const section of CONFIGURATION_SECTIONS) {
-      if (!this.#configuration.has(section)) throw new Error(`Missing configuration section ${section}.`);
-    }
-
     this.#configurationDisposable = configuration.onDidChangeConfiguration(event => {
       if (CONFIGURATION_SECTIONS.some(section => event.affectsConfiguration(section))) {
         this.notify();
