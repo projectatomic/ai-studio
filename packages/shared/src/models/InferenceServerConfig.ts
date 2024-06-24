@@ -50,5 +50,5 @@ export interface InferenceServerConfig {
    * @default undefined the GPU will not be used
    * -1 to offload all the layers
    */
-  gpu_layers?: number;
+  gpuLayers?: number;
 }
