@@ -30,6 +30,7 @@ import type { ModelOptions } from './models/IModelOptions';
 import type { Conversation } from './models/IPlaygroundMessage';
 import type { LocalModelImportInfo } from './models/ILocalModelInfo';
 import type { ContainerConnectionInfo } from './models/IContainerConnectionInfo';
+import type { ExtensionConfiguration } from './models/IExtensionConfiguration';
 
 export abstract class StudioAPI {
   abstract ping(): Promise<string>;
@@ -146,6 +147,11 @@ export abstract class StudioAPI {
    * Return the conversations
    */
   abstract getPlaygroundConversations(): Promise<Conversation[]>;
+
+  /**
+   * Get the extension configuration (preferences)
+   */
+  abstract getExtensionConfiguration(): Promise<ExtensionConfiguration>;
 
   /**
    * Return the list of supported languages to generate code from.

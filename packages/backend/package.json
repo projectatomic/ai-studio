@@ -19,6 +19,13 @@
           "format": "folder",
           "default": "",
           "description": "Custom path where to download models. Note: The extension must be restarted for changes to take effect. (Default is blank)"
+        },
+        "ai-lab.experimentalGPU": {
+          "type": "boolean",
+          "default": false,
+          "hidden": true,
+          "description": "Experimental GPU support for inference servers",
+          "when": "isWindows"
         }
       }
     },

@@ -44,6 +44,7 @@ import { PodManager } from './managers/recipes/PodManager';
 import { initWebview } from './webviewUtils';
 import { LlamaCppPython } from './workers/provider/LlamaCppPython';
 import { InferenceProviderRegistry } from './registries/InferenceProviderRegistry';
+import { ConfigurationRegistry } from './registries/ConfigurationRegistry';
 
 export class Studio {
   readonly #extensionContext: ExtensionContext;
@@ -74,6 +75,7 @@ export class Studio {
   #playgroundManager: PlaygroundV2Manager | undefined;
   #applicationManager: ApplicationManager | undefined;
   #inferenceProviderRegistry: InferenceProviderRegistry | undefined;
+  #configurationRegistry: ConfigurationRegistry | undefined;
 
   constructor(readonly extensionContext: ExtensionContext) {
     this.#extensionContext = extensionContext;
@@ -125,6 +127,13 @@ export class Studio {
      */
     this.#cancellationTokenRegistry = new CancellationTokenRegistry();
     this.#extensionContext.subscriptions.push(this.#cancellationTokenRegistry);
+
+    /**
+     * The configuration registry manage the extension preferences/settings
+     */
+    this.#configurationRegistry = new ConfigurationRegistry(this.#panel.webview);
+    this.#configurationRegistry?.init();
+    this.#extensionContext.subscriptions.push(this.#configurationRegistry);
 
     /**
      * The container registry handle the events linked to containers (start, remove, die...)
@@ -280,6 +289,7 @@ export class Studio {
       this.#playgroundManager,
       this.#snippetManager,
       this.#cancellationTokenRegistry,
+      this.#configurationRegistry,
     );
     // Register the instance
     this.#rpcExtension.registerInstance<StudioApiImpl>(StudioApiImpl, this.#studioApi);

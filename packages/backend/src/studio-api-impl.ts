@@ -45,6 +45,8 @@ import type { CancellationTokenRegistry } from './registries/CancellationTokenRe
 import type { LocalModelImportInfo } from '@shared/src/models/ILocalModelInfo';
 import { checkContainerConnectionStatusAndResources, getPodmanConnection } from './utils/podman';
 import type { ContainerConnectionInfo } from '@shared/src/models/IContainerConnectionInfo';
+import type { ExtensionConfiguration } from '@shared/src/models/IExtensionConfiguration';
+import type { ConfigurationRegistry } from './registries/ConfigurationRegistry';
 
 interface PortQuickPickItem extends podmanDesktopApi.QuickPickItem {
   port: number;
@@ -62,6 +64,7 @@ export class StudioApiImpl implements StudioAPI {
     private playgroundV2: PlaygroundV2Manager,
     private snippetManager: SnippetManager,
     private cancellationTokenRegistry: CancellationTokenRegistry,
+    private configurationRegistry: ConfigurationRegistry,
   ) {}
 
   async requestDeleteConversation(conversationId: string): Promise<void> {
@@ -97,6 +100,10 @@ export class StudioApiImpl implements StudioAPI {
 
   async getPlaygroundConversations(): Promise<Conversation[]> {
     return this.playgroundV2.getConversations();
+  }
+
+  async getExtensionConfiguration(): Promise<ExtensionConfiguration> {
+    return this.configurationRegistry.getExtensionConfiguration();
   }
 
   async getSnippetLanguages(): Promise<Language[]> {
