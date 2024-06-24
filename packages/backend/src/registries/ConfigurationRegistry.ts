@@ -39,8 +39,16 @@ export class ConfigurationRegistry extends Publisher<ExtensionConfiguration> imp
   getExtensionConfiguration(): ExtensionConfiguration {
     return {
       experimentalGPU: this.#configuration.get<boolean>('experimentalGPU') ?? false,
-      modelsPath: this.#configuration.get<string>('models.path') ?? path.join(this.appUserDirectory, 'models'),
+      modelsPath: this.getModelsPath(),
     };
+  }
+
+  private getModelsPath(): string {
+    const value = this.#configuration.get<string>('models.path');
+    if (value && value.length > 0) {
+      return value;
+    }
+    return path.join(this.appUserDirectory, 'models');
   }
 
   dispose(): void {
