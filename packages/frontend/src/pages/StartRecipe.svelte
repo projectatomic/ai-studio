@@ -2,7 +2,6 @@
 import {
   faCheckCircle,
   faDownload,
-  faFileImport,
   faFolder,
   faRocket,
   faUpRightFromSquare,
