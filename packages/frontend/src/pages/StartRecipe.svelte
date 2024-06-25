@@ -2,12 +2,12 @@
 import {
   faCheckCircle,
   faDownload,
+  faFileImport,
   faFolder,
   faRocket,
   faUpRightFromSquare,
   faWarning,
 } from '@fortawesome/free-solid-svg-icons';
-import NavPage from '/@/lib/NavPage.svelte';
 import { catalog } from '/@/stores/catalog';
 import Fa from 'svelte-fa';
 import type { Recipe } from '@shared/src/models/IRecipe';
@@ -16,7 +16,7 @@ import { findLocalRepositoryByRecipeId } from '/@/utils/localRepositoriesUtils';
 import { localRepositories } from '/@/stores/localRepositories';
 import Select from 'svelte-select';
 import { modelsInfo } from '/@/stores/modelsInfo';
-import { Button } from '@podman-desktop/ui-svelte';
+import { Button, FormPage } from '@podman-desktop/ui-svelte';
 import type { ModelInfo } from '@shared/src/models/IModelInfo';
 import { InferenceType } from '@shared/src/models/IInference';
 import { studioClient } from '/@/utils/client';
@@ -138,13 +138,24 @@ onMount(() => {
     processTasks(tasks);
   });
 });
+
+export function goToUpPage(): void {
+  router.goto('/recipes');
+}
 </script>
 
-<NavPage
-  lastPage="{{ name: 'Recipes', path: '/recipes' }}"
-  icon="{faRocket}"
+<FormPage
+  breadcrumbLeftPart="Recipes"
+  breadcrumbRightPart="Start recipe"
+  breadcrumbTitle="Go back to recipes page"
   title="Start recipe"
-  searchEnabled="{false}">
+  on:close="{goToUpPage}"
+  on:breadcrumbClick="{goToUpPage}">
+  <svelte:fragment slot="icon">
+    <div class="rounded-full w-8 h-8 flex items-center justify-center">
+      <Fa size="1.125x" class="text-[var(--pd-content-header-icon)]" icon="{faRocket}" />
+    </div>
+  </svelte:fragment>
   <svelte:fragment slot="content">
     <div class="flex flex-col w-full">
       <!-- warning machine resources -->
@@ -253,4 +264,4 @@ onMount(() => {
       {/if}
     </div>
   </svelte:fragment>
-</NavPage>
+</FormPage>
