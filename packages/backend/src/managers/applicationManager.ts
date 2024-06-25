@@ -104,7 +104,10 @@ export class ApplicationManager extends Publisher<ApplicationState[]> implements
       trackingId: trackingId,
     };
 
-    const task = this.taskRegistry.createTask(`Pulling ${recipe.name} recipe`, 'loading', labels);
+    const task = this.taskRegistry.createTask(`Pulling ${recipe.name} recipe`, 'loading', {
+      ...labels,
+      'recipe-pulling': recipe.id, // this label should only be on the master task
+    });
 
     window
       .withProgress({ location: ProgressLocation.TASK_WIDGET, title: `Pulling ${recipe.name}.` }, () =>
