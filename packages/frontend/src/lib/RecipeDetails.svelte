@@ -75,7 +75,7 @@ const deleteLocalClone = () => {
 };
 </script>
 
-<div class="w-full bg-charcoal-700 rounded-md p-4">
+<div class="w-full bg-[var(--pd-content-bg)] rounded-md p-4">
   <div class="flex flex-row items-center">
     {#if appState && appState.pod}
       <div class="grow flex overflow-hidden whitespace-nowrap items-center" aria-label="app-status">
@@ -110,7 +110,7 @@ const deleteLocalClone = () => {
     </div>
   {/if}
 </div>
-<div class="flex flex-col w-full space-y-4 rounded-md bg-charcoal-700 p-4">
+<div class="flex flex-col w-full space-y-4 rounded-md bg-[var(--pd-content-bg)] p-4">
   {#if model}
     <div class="flex flex-col space-y-2">
       <div class="flex flex-row justify-between">
@@ -127,9 +127,9 @@ const deleteLocalClone = () => {
             class="h-full" />
         </div>
       </div>
-      <div class="bg-charcoal-900 min-w-[200px] grow flex flex-col p-2 rounded-md space-y-3">
+      <div class="bg-[var(--pd-content-card-bg)] min-w-[200px] grow flex flex-col p-2 rounded-md space-y-3">
         <div class="flex justify-between items-center">
-          <span class="text-sm" aria-label="model-selected">{model?.name}</span>
+          <span class="text-sm text-[var(--pd-content-card-text)]" aria-label="model-selected">{model?.name}</span>
           {#if recipe?.recommended?.includes(model.id)}
             <i class="fas fa-star fa-xs text-gray-900" title="Recommended model"></i>
           {/if}
@@ -137,7 +137,7 @@ const deleteLocalClone = () => {
         {#if model?.license}
           <div class="flex flex-row space-x-2">
             <div
-              class="bg-charcoal-400 text-gray-600 text-xs font-thin px-2.5 py-0.5 rounded-md"
+              class="bg-[var(--pd-label-bg)] text-[var(--pd-label-text)] text-xs font-thin px-2.5 py-0.5 rounded-md"
               aria-label="license-model">
               {model.license}
             </div>
