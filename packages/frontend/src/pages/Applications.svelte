@@ -10,6 +10,7 @@ import { router } from 'tinro';
 import { onMount } from 'svelte';
 import type { ApplicationState } from '@shared/src/models/IApplicationState';
 import { Table, TableColumn, TableRow, NavPage } from '@podman-desktop/ui-svelte';
+import TasksBanner from '/@/lib/progress/TasksBanner.svelte';
 
 const columns: TableColumn<ApplicationState>[] = [
   new TableColumn<ApplicationState>('Status', { width: '70px', align: 'center', renderer: ColumnStatus }),
@@ -43,6 +44,9 @@ onMount(() => {
   <div slot="content" class="flex flex-col min-w-full min-h-full">
     <div class="min-w-full min-h-full flex-1">
       <div class="mt-4 px-5 space-y-5">
+        <!-- showing running tasks -->
+        <TasksBanner title="Pulling recipes" labels="{['recipe-pulling']}" />
+
         {#if data?.length > 0}
           <Table kind="AI App" data="{data}" columns="{columns}" row="{row}"></Table>
         {:else}

@@ -20,6 +20,7 @@ import Playgrounds from './pages/Playgrounds.svelte';
 import Playground from './pages/Playground.svelte';
 import PlaygroundCreate from './pages/PlaygroundCreate.svelte';
 import ImportModels from './pages/ImportModel.svelte';
+import StartRecipe from '/@/pages/StartRecipe.svelte';
 
 router.mode.hash();
 
@@ -70,10 +71,17 @@ onMount(() => {
         <Preferences />
       </Route>
 
-      <Route path="/recipe/:id/*" let:meta>
-        <Recipe recipeId="{meta.params.id}" />
+      <!-- Recipes -->
+      <Route path="/recipe/:id/*" firstmatch let:meta>
+        <Route path="/start">
+          <StartRecipe recipeId="{meta.params.id}" />
+        </Route>
+        <Route path="/*">
+          <Recipe recipeId="{meta.params.id}" />
+        </Route>
       </Route>
 
+      <!-- Models -->
       <Route path="/models/*" firstmatch>
         <Route path="/import">
           <ImportModels />
@@ -87,6 +95,7 @@ onMount(() => {
         <Model modelId="{meta.params.id}" />
       </Route>
 
+      <!-- services -->
       <Route path="/services/*">
         <Services />
       </Route>
