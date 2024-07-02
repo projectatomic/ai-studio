@@ -20,6 +20,7 @@ import { expect, test, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import ServiceAction from './ServiceAction.svelte';
 import { studioClient } from '/@/utils/client';
+import { InferenceType } from '@shared/src/models/IInference';
 
 vi.mock('../../../utils/client', async () => ({
   studioClient: {
@@ -39,6 +40,7 @@ beforeEach(() => {
 test('should display stop button when status running', async () => {
   render(ServiceAction, {
     object: {
+      type: InferenceType.LLAMA_CPP,
       health: undefined,
       models: [],
       connection: { port: 8888 },
@@ -54,6 +56,7 @@ test('should display stop button when status running', async () => {
 test('should display start button when status stopped', async () => {
   render(ServiceAction, {
     object: {
+      type: InferenceType.LLAMA_CPP,
       health: undefined,
       models: [],
       connection: { port: 8888 },
@@ -69,6 +72,7 @@ test('should display start button when status stopped', async () => {
 test('should call stopInferenceServer when click stop', async () => {
   render(ServiceAction, {
     object: {
+      type: InferenceType.LLAMA_CPP,
       health: undefined,
       models: [],
       connection: { port: 8888 },
@@ -85,6 +89,7 @@ test('should call stopInferenceServer when click stop', async () => {
 test('should call startInferenceServer when click start', async () => {
   render(ServiceAction, {
     object: {
+      type: InferenceType.LLAMA_CPP,
       health: undefined,
       models: [],
       connection: { port: 8888 },
@@ -101,6 +106,7 @@ test('should call startInferenceServer when click start', async () => {
 test('should call deleteInferenceServer when click delete', async () => {
   render(ServiceAction, {
     object: {
+      type: InferenceType.LLAMA_CPP,
       health: undefined,
       models: [],
       connection: { port: 8888 },
@@ -117,6 +123,7 @@ test('should call deleteInferenceServer when click delete', async () => {
 test('should be disabled on transition', async () => {
   render(ServiceAction, {
     object: {
+      type: InferenceType.LLAMA_CPP,
       health: undefined,
       models: [],
       connection: { port: 8888 },
@@ -126,15 +133,16 @@ test('should be disabled on transition', async () => {
   });
 
   const startBtn = screen.getByTitle('Start service');
-  expect(startBtn.classList).toContain('text-gray-900');
+  expect(startBtn.classList).toContain('text-[var(--pd-action-button-disabled-text)]');
 
   const deleteBtn = screen.getByTitle('Delete service');
-  expect(deleteBtn.classList).toContain('text-gray-900');
+  expect(deleteBtn.classList).toContain('text-[var(--pd-action-button-disabled-text)]');
 });
 
 test('should have background on details', async () => {
   render(ServiceAction, {
     object: {
+      type: InferenceType.LLAMA_CPP,
       health: undefined,
       models: [],
       connection: { port: 8888 },
@@ -145,6 +153,6 @@ test('should have background on details', async () => {
   });
 
   const startBtn = screen.getByTitle('Start service');
-  expect(startBtn.classList).toContain('bg-charcoal-800');
+  expect(startBtn.classList).toContain('bg-[var(--pd-action-button-details-bg)]');
   expect(startBtn.classList).toContain('rounded-lg');
 });

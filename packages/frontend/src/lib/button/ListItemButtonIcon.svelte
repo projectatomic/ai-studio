@@ -1,19 +1,17 @@
 <script lang="ts">
 import type { IconDefinition } from '@fortawesome/free-solid-svg-icons';
 import Fa from 'svelte-fa';
-import DropDownMenuItem from '../DropDownMenuItem.svelte';
-
+import { DropdownMenu } from '@podman-desktop/ui-svelte';
 export let title: string;
 export let icon: IconDefinition;
 export let hidden = false;
 export let enabled: boolean = true;
-export let onClick: () => void = () => {
-  console.log('==> 0');
-};
+export let onClick: () => void = () => {};
 export let menu = false;
 export let detailed = false;
 export let inProgress = false;
 export let iconOffset = '';
+export let tooltip: string = '';
 
 let positionLeftClass = 'left-1';
 if (detailed) positionLeftClass = 'left-2';
@@ -21,13 +19,13 @@ let positionTopClass = 'top-1';
 if (detailed) positionTopClass = '[0.2rem]';
 
 const buttonDetailedClass =
-  'text-gray-400 bg-charcoal-800 hover:text-violet-600 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center';
+  'text-[var(--pd-action-button-details-text)] bg-[var(--pd-action-button-details-bg)] hover:text-[var(--pd-action-button-details-hover-text)] font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center';
 const buttonDetailedDisabledClass =
-  'text-gray-900 bg-charcoal-800 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center';
+  'text-[var(--pd-action-button-details-disabled-text)] bg-[var(--pd-action-button-details-disabled-bg)] font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center';
 const buttonClass =
-  'm-0.5 text-gray-400 hover:bg-charcoal-600 hover:text-violet-600 font-medium rounded-full inline-flex items-center px-2 py-2 text-center';
+  'm-0.5 text-[var(--pd-action-button-text)] hover:bg-[var(--pd-action-button-hover-bg)] hover:text-[var(--pd-action-button-hover-text)] font-medium rounded-full inline-flex items-center px-2 py-2 text-center';
 const buttonDisabledClass =
-  'm-0.5 text-gray-900 font-medium rounded-full inline-flex items-center px-2 py-2 text-center';
+  'm-0.5 text-[var(--pd-action-button-disabled-text)] font-medium rounded-full inline-flex items-center px-2 py-2 text-center';
 
 $: handleClick =
   enabled && !inProgress
@@ -46,7 +44,13 @@ $: styleClass = detailed
 
 {#if menu}
   <!-- enabled menu -->
-  <DropDownMenuItem title="{title}" icon="{icon}" enabled="{enabled}" hidden="{hidden}" onClick="{handleClick}" />
+  <DropdownMenu.Item
+    title="{title}"
+    tooltip="{tooltip}"
+    icon="{icon}"
+    enabled="{enabled}"
+    hidden="{hidden}"
+    onClick="{handleClick}" />
 {:else}
   <button
     title="{title}"
@@ -58,7 +62,7 @@ $: styleClass = detailed
     <Fa class="h-4 w-4 {iconOffset}" icon="{icon}" />
     <div
       aria-label="spinner"
-      class="w-6 h-6 rounded-full animate-spin border border-solid border-violet-500 border-t-transparent absolute {positionTopClass} {positionLeftClass}"
+      class="w-6 h-6 rounded-full animate-spin border border-solid border-[var(--pd-action-button-spinner)] border-t-transparent absolute {positionTopClass} {positionLeftClass}"
       class:hidden="{!inProgress}">
     </div>
   </button>

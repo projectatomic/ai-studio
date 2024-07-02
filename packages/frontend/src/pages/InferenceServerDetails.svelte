@@ -217,7 +217,7 @@ export function goToUpPage(): void {
                     bind:value="{selectedLanguage}"
                     on:change="{onLanguageChange}"
                     id="languages"
-                    class="border text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-1 bg-charcoal-900 border-charcoal-900 placeholder-gray-700 text-white"
+                    class="border ml-1 text-sm rounded-lg bg-[var(--pd-action-button-details-bg)] block p-1 border-[var(--pd-action-button-details-bg)] placeholder-gray-700 text-[var(--pd-action-button-details-text)]"
                     name="languages">
                     {#each $snippetLanguages as language}
                       <option class="my-1" value="{language.key}">{language.label}</option>
@@ -231,7 +231,7 @@ export function goToUpPage(): void {
                       bind:value="{selectedVariant}"
                       on:change="{() => generate(selectedLanguage, selectedVariant)}"
                       disabled="{variants.length === 1}"
-                      class="border ml-1 text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-1 bg-charcoal-900 border-charcoal-900 placeholder-gray-700 text-white"
+                      class="border ml-1 text-sm rounded-lg bg-[var(--pd-action-button-details-bg)] block p-1 border-[var(--pd-action-button-details-bg)] placeholder-gray-700 text-[var(--pd-action-button-details-text)]"
                       name="variants">
                       {#each variants as variant}
                         <option class="my-1" value="{variant.key}">{variant.key}</option>
