@@ -16,9 +16,9 @@
  * SPDX-License-Identifier: Apache-2.0
  ***********************************************************************/
 
-import { window } from '@podman-desktop/api';
-import fs, { statSync, existsSync, mkdirSync, rmSync } from 'node:fs';
-import git from 'isomorphic-git';
+import { env, window } from '@podman-desktop/api';
+import fs, { existsSync, mkdirSync, type NoParamCallback, rmSync, statSync } from 'node:fs';
+import git, { type CallbackFsClient } from 'isomorphic-git';
 import http from 'isomorphic-git/http/node';
 
 export interface GitCloneInfo {
@@ -27,11 +27,50 @@ export interface GitCloneInfo {
   targetDirectory: string;
 }
 
+function getFs(): CallbackFsClient {
+  if (env.isWindows) {
+    return {
+      chmod: fs.chmod,
+      lstat: fs.lstat,
+      mkdir: fs.mkdir,
+      readFile: fs.readFile,
+      readdir: fs.readdir,
+      readlink: fs.readlink,
+      rmdir: fs.rmdir,
+      stat: fs.stat,
+      symlink: (
+        target: fs.PathLike,
+        path: fs.PathLike,
+        type_: fs.symlink.Type | undefined,
+        callback: fs.NoParamCallback,
+      ) => {
+        if (!callback) {
+          callback = type_ as unknown as NoParamCallback;
+          type_ = undefined;
+        }
+        fs.symlink(target, path, type_, err => {
+          if (err) {
+            fs.writeFile(path, target.toString(), { mode: 0o0444 }, err => {
+              callback(err);
+            });
+          } else {
+            // eslint-disable-next-line no-null/no-null
+            callback(null);
+          }
+        });
+      },
+      unlink: fs.unlink,
+      writeFile: fs.writeFile,
+    };
+  }
+  return fs;
+}
+
 export class GitManager {
   async cloneRepository(gitCloneInfo: GitCloneInfo) {
     // clone repo
     await git.clone({
-      fs,
+      fs: getFs(),
       http,
       dir: gitCloneInfo.targetDirectory,
       url: gitCloneInfo.repository,
@@ -78,7 +117,7 @@ export class GitManager {
     clean: boolean;
   }> {
     const status = await git.statusMatrix({
-      fs,
+      fs: getFs(),
       dir: directory,
     });
 
@@ -106,12 +145,12 @@ export class GitManager {
   }
 
   async getCurrentCommit(directory: string): Promise<string> {
-    return git.resolveRef({ fs, dir: directory, ref: 'HEAD' });
+    return git.resolveRef({ fs: getFs(), dir: directory, ref: 'HEAD' });
   }
 
   async pull(directory: string): Promise<void> {
     return git.pull({
-      fs,
+      fs: getFs(),
       http,
       dir: directory,
     });
@@ -170,7 +209,7 @@ export class GitManager {
   ): Promise<{ ok?: boolean; updatable?: boolean; error?: string }> {
     // fetch updates
     await git.fetch({
-      fs,
+      fs: getFs(),
       http,
       dir: directory,
     });
@@ -186,7 +225,7 @@ export class GitManager {
     }
 
     const branch = await git.currentBranch({
-      fs,
+      fs: getFs(),
       dir: directory,
     });
 
@@ -240,12 +279,12 @@ export class GitManager {
 
   async getTrackingBranch(directory: string, branch: string): Promise<string | undefined> {
     const mergeRef = await git.getConfig({
-      fs,
+      fs: getFs(),
       dir: directory,
       path: `branch.${branch}.merge`,
     });
     const remote = await git.getConfig({
-      fs,
+      fs: getFs(),
       dir: directory,
       path: `branch.${branch}.remote`,
     });
@@ -257,7 +296,7 @@ export class GitManager {
 
     const remoteCommits = (
       await git.log({
-        fs,
+        fs: getFs(),
         dir,
         ref: remoteBranch,
       })
@@ -266,7 +305,7 @@ export class GitManager {
       .sort();
     const localCommits = (
       await git.log({
-        fs,
+        fs: getFs(),
         dir,
         ref: localBranch,
       })
@@ -302,7 +341,7 @@ export class GitManager {
   async getTagCommitId(directory: string, tagName: string): Promise<string | undefined> {
     try {
       return await git.resolveRef({
-        fs,
+        fs: getFs(),
         dir: directory,
         ref: tagName,
       });
