@@ -25,7 +25,7 @@ import type { TaskRegistry } from '../../registries/TaskRegistry';
 import { InferenceType } from '@shared/src/models/IInference';
 
 export const LLAMA_CPP_INFERENCE_IMAGE =
-  'ghcr.io/containers/podman-desktop-extension-ai-lab-playground-images/ai-lab-playground-chat:0.3.2';
+  'ghcr.io/containers/podman-desktop-extension-ai-lab-playground-images/ai-lab-playground-chat:0.4';
 
 export const SECOND: number = 1_000_000_000;
 
