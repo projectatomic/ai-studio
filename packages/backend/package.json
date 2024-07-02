@@ -55,7 +55,7 @@
     "watch": "vite --mode development build -w"
   },
   "dependencies": {
-    "isomorphic-git": "^1.26.3",
+    "isomorphic-git": "^1.26.4",
     "mustache": "^4.2.0",
     "openai": "^4.52.2",
     "postman-code-generators": "^1.10.1",
