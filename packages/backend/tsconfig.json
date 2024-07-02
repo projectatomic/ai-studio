@@ -5,9 +5,7 @@
     "moduleResolution": "Node",
     "resolveJsonModule": true,
     "lib": [
-      "ES2017",
-      "webworker",
-      "dom",
+      "ES2017"
     ],
     "sourceMap": true,
     "outDir": "dist",
