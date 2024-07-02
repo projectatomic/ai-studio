@@ -79,7 +79,7 @@ export function goToUpPage(): void {
         <svelte:fragment slot="header">
           {#if connectionInfo}
             <div class="px-4">
-              <ContainerConnectionStatusInfo connectionInfo="{connectionInfo}" background="dark" />
+              <ContainerConnectionStatusInfo connectionInfo="{connectionInfo}" />
             </div>
           {/if}
         </svelte:fragment>

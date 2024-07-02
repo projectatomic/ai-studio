@@ -19,7 +19,7 @@ const toggle = () => {
         <div
           class:hidden="{!open}"
           class:block="{open}"
-          class="h-fit lg:bg-charcoal-800 lg:rounded-l-md lg:mt-5 lg:py-4 max-lg:block"
+          class="h-fit lg:bg-[var(--pd-content-card-bg)] lg:rounded-l-md lg:mt-5 lg:py-4 max-lg:block"
           aria-label="{`${detailsLabel} panel`}">
           <div class="flex flex-col px-4 space-y-4 mx-auto">
             <div class="w-full flex flex-row justify-between max-lg:hidden">
@@ -33,7 +33,7 @@ const toggle = () => {
         <div
           class:hidden="{open}"
           class:block="{!open}"
-          class="bg-charcoal-800 mt-5 p-4 rounded-md h-fit max-lg:hidden"
+          class="bg-[var(--pd-content-card-bg)] mt-5 p-4 rounded-md h-fit max-lg:hidden"
           aria-label="{`toggle ${detailsLabel}`}">
           <button on:click="{toggle}" aria-label="{`show ${detailsLabel}`}"
             ><i class="fas fa-angle-left text-gray-900"></i></button>

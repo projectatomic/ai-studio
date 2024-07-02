@@ -7,8 +7,6 @@ import type { ContainerConnectionInfo } from '@shared/src/models/IContainerConne
 import { Button } from '@podman-desktop/ui-svelte';
 
 export let connectionInfo: ContainerConnectionInfo;
-type BannerBackgroundColor = 'light' | 'dark';
-export let background: BannerBackgroundColor = 'light';
 
 let title: string | undefined = '';
 let description: string | undefined = '';
@@ -79,9 +77,7 @@ function executeCommand() {
 
 {#if title && description}
   <div
-    class="w-full {background === 'light'
-      ? 'bg-charcoal-500'
-      : 'bg-charcoal-800'} border-t-[3px] border-amber-500 p-4 mt-5 shadow-inner"
+    class="w-full bg-[var(--pd-content-card-bg)] text-[var(--pd-content-card-text)] border-t-[3px] border-amber-500 p-4 mt-5 shadow-inner"
     aria-label="Container connection info banner">
     <div class="flex flex-row space-x-3">
       <div class="flex">
