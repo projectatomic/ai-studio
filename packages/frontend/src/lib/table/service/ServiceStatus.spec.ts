@@ -20,7 +20,7 @@ import { expect, test, vi, describe } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import ServiceStatus from './ServiceStatus.svelte';
 import { studioClient } from '/@/utils/client';
-import type { InferenceServerStatus } from '@shared/src/models/IInference';
+import { type InferenceServerStatus, InferenceType } from '@shared/src/models/IInference';
 
 vi.mock('../../../utils/client', async () => ({
   studioClient: {
@@ -39,6 +39,7 @@ describe('transition statuses', () => {
           connection: { port: 8888 },
           status: status,
           container: { containerId: 'dummyContainerId', engineId: 'dummyEngineId' },
+          type: InferenceType.LLAMA_CPP,
         },
       });
 
@@ -62,6 +63,7 @@ describe('stable statuses', () => {
           connection: { port: 8888 },
           status: status,
           container: { containerId: 'dummyContainerId', engineId: 'dummyEngineId' },
+          type: InferenceType.LLAMA_CPP,
         },
       });
 
@@ -86,6 +88,7 @@ test('defined health should not display a spinner', async () => {
       connection: { port: 8888 },
       status: 'running',
       container: { containerId: 'dummyContainerId', engineId: 'dummyEngineId' },
+      type: InferenceType.LLAMA_CPP,
     },
   });
 
@@ -108,6 +111,7 @@ test('click on status icon should redirect to container', async () => {
       connection: { port: 8888 },
       status: 'running',
       container: { containerId: 'dummyContainerId', engineId: 'dummyEngineId' },
+      type: InferenceType.LLAMA_CPP,
     },
   });
   // Get button and click on it
@@ -126,6 +130,7 @@ test('error status should show degraded', async () => {
       connection: { port: 8888 },
       status: 'error',
       container: { containerId: 'dummyContainerId', engineId: 'dummyEngineId' },
+      type: InferenceType.LLAMA_CPP,
     },
   });
   // Get button and click on it
@@ -140,6 +145,7 @@ test('running status with no healthcheck should show starting', async () => {
       connection: { port: 8888 },
       status: 'running',
       container: { containerId: 'dummyContainerId', engineId: 'dummyEngineId' },
+      type: InferenceType.LLAMA_CPP,
     },
   });
   // Get button and click on it

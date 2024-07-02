@@ -17,17 +17,55 @@
  ***********************************************************************/
 
 import '@testing-library/jest-dom/vitest';
-import { test, expect } from 'vitest';
+import { expect, test, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import type { ModelInfo } from '@shared/src/models/IModelInfo';
 import ModelColumnIcon from './ModelColumnIcon.svelte';
+import { type InferenceServer, InferenceType } from '@shared/src/models/IInference';
 
-test('Expect green background when model has a file', async () => {
-  const d = new Date();
-  d.setDate(d.getDate() - 2);
+const mocks = vi.hoisted(() => {
+  return {
+    getInferenceServersMock: vi.fn<void[], InferenceServer[]>(),
+  };
+});
 
+vi.mock('../../../stores/inferenceServers', () => ({
+  inferenceServers: {
+    subscribe: (f: (msg: InferenceServer[]) => void) => {
+      f(mocks.getInferenceServersMock());
+      return () => {};
+    },
+  },
+}));
+
+beforeEach(() => {
+  vi.resetAllMocks();
+});
+
+test('Expect remote model to have NONE title', async () => {
   const object: ModelInfo = {
-    id: 'my-model',
+    id: 'model-downloaded-id',
+    description: '',
+    hw: '',
+    license: '',
+    name: '',
+    registry: '',
+    url: '',
+    memory: 1000,
+  };
+
+  mocks.getInferenceServersMock.mockReturnValue([]);
+
+  render(ModelColumnIcon, { object });
+
+  const role = screen.getByRole('status');
+  expect(role).toBeDefined();
+  expect(role.title).toBe('NONE');
+});
+
+test('Expect downloaded model to have DOWNLOADED title', async () => {
+  const object: ModelInfo = {
+    id: 'model-downloaded-id',
     description: '',
     hw: '',
     license: '',
@@ -36,36 +74,58 @@ test('Expect green background when model has a file', async () => {
     url: '',
     file: {
       file: 'file',
-      creation: d,
+      creation: undefined,
       size: 1000,
       path: 'path',
     },
     memory: 1000,
   };
+
+  mocks.getInferenceServersMock.mockReturnValue([]);
+
   render(ModelColumnIcon, { object });
 
-  const logo = screen.getByRole('img');
-  expect(logo).toBeInTheDocument();
-  expect(logo).toHaveClass(/^bg-green-/);
+  const role = screen.getByRole('status');
+  expect(role).toBeDefined();
+  expect(role.title).toBe('DOWNLOADED');
 });
 
-test('Expect non green background when model has no file', async () => {
-  const d = new Date();
-  d.setDate(d.getDate() - 2);
-
+test('Expect in used model to have USED title', async () => {
   const object: ModelInfo = {
-    id: 'my-model',
+    id: 'model-in-used-id',
     description: '',
     hw: '',
     license: '',
     name: '',
     registry: '',
     url: '',
+    file: {
+      file: 'file',
+      creation: undefined,
+      size: 1000,
+      path: 'path',
+    },
     memory: 1000,
   };
+
+  mocks.getInferenceServersMock.mockReturnValue([
+    {
+      models: [object],
+      type: InferenceType.LLAMA_CPP,
+      status: 'running',
+      container: {
+        containerId: '',
+        engineId: '',
+      },
+      connection: {
+        port: 0,
+      },
+      health: undefined,
+    },
+  ]);
   render(ModelColumnIcon, { object });
 
-  const logo = screen.getByRole('img');
-  expect(logo).toBeInTheDocument();
-  expect(logo).not.toHaveClass(/^bg-green-/);
+  const role = screen.getByRole('status');
+  expect(role).toBeDefined();
+  expect(role.title).toBe('USED');
 });

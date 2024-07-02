@@ -5,7 +5,12 @@ import { faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 import ListItemButtonIcon from '../../button/ListItemButtonIcon.svelte';
 import { studioClient } from '/@/utils/client';
 import { router } from 'tinro';
+import { onMount } from 'svelte';
+import { inferenceServers } from '/@/stores/inferenceServers';
 export let object: ModelInfo;
+
+let inUse: boolean = false;
+$: inUse;
 
 function deleteModel() {
   studioClient.requestRemoveLocalModel(object.id).catch(err => {
@@ -31,6 +36,12 @@ function createModelService() {
   router.goto('/service/create');
   router.location.query.replace({ 'model-id': object.id });
 }
+
+onMount(() => {
+  return inferenceServers.subscribe(servers => {
+    inUse = servers.some(server => server.models.some(model => model.id === object.id));
+  });
+});
 </script>
 
 {#if object.file !== undefined}
@@ -44,7 +55,11 @@ function createModelService() {
     onClick="{() => openModelFolder()}"
     title="Open Model Folder"
     enabled="{!object.state}" />
-  <ListItemButtonIcon icon="{faTrash}" onClick="{deleteModel}" title="Delete Model" enabled="{!object.state}" />
+  <ListItemButtonIcon
+    icon="{faTrash}"
+    onClick="{deleteModel}"
+    title="Delete Model"
+    enabled="{!inUse && !object.state}" />
 {:else}
   <ListItemButtonIcon icon="{faDownload}" onClick="{downloadModel}" title="Download Model" enabled="{!object.state}" />
 {/if}

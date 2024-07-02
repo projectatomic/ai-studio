@@ -23,12 +23,22 @@ import * as catalogStore from '/@/stores/catalog';
 import { readable } from 'svelte/store';
 import type { ApplicationCatalog } from '@shared/src/models/IApplicationCatalog';
 import RecipeModels from '/@/pages/RecipeModels.svelte';
+import type { InferenceServer } from '@shared/src/models/IInference';
 
 vi.mock('/@/stores/catalog', async () => {
   return {
     catalog: vi.fn(),
   };
 });
+
+vi.mock('../stores/inferenceServers', () => ({
+  inferenceServers: {
+    subscribe: (f: (msg: InferenceServer[]) => void) => {
+      f([]);
+      return () => {};
+    },
+  },
+}));
 
 beforeEach(() => {
   vi.resetAllMocks();
