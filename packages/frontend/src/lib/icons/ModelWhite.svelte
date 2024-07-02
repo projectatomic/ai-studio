@@ -1,10 +1,18 @@
 <script lang="ts">
+export let size = '40';
 export let solid: boolean = false;
-const fg = solid ? 'white' : '#888';
+
+const fg = solid ? 'white' : 'currentColor';
 </script>
 
-<div role="img" class="rounded py-[6px] pl-[7px] pr-[5px]" class:bg-green-400="{solid}">
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<div role="img">
+  <svg
+    width="{size}"
+    height="{size}"
+    style="{$$props.style}"
+    class="{$$props.class}"
+    viewBox="0 0 16 16"
+    xmlns="http://www.w3.org/2000/svg">
     <g clip-path="url(#clip0_47_118)">
       <g clip-path="url(#clip1_47_118)">
         <path

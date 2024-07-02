@@ -21,6 +21,7 @@ import { screen, render, waitFor, within } from '@testing-library/svelte';
 import Models from './Models.svelte';
 import { router } from 'tinro';
 import userEvent from '@testing-library/user-event';
+import type { InferenceServer } from '@shared/src/models/IInference';
 
 const mocks = vi.hoisted(() => {
   return {
@@ -44,6 +45,15 @@ const mocks = vi.hoisted(() => {
     getTasks: vi.fn().mockResolvedValue([]),
   };
 });
+
+vi.mock('../stores/inferenceServers', () => ({
+  inferenceServers: {
+    subscribe: (f: (msg: InferenceServer[]) => void) => {
+      f([]);
+      return () => {};
+    },
+  },
+}));
 
 vi.mock('/@/utils/client', async () => {
   return {

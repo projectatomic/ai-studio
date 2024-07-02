@@ -22,11 +22,13 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import type { ModelInfo } from '@shared/src/models/IModelInfo';
 import ModelColumnActions from '/@/lib/table/model/ModelColumnActions.svelte';
 import { router } from 'tinro';
+import { type InferenceServer, InferenceType } from '@shared/src/models/IInference';
 
 const mocks = vi.hoisted(() => ({
   requestRemoveLocalModel: vi.fn(),
   openFile: vi.fn(),
   downloadModel: vi.fn(),
+  getInferenceServersMock: vi.fn<void[], InferenceServer[]>(),
 }));
 
 vi.mock('/@/utils/client', () => ({
@@ -37,8 +39,19 @@ vi.mock('/@/utils/client', () => ({
   },
 }));
 
+vi.mock('../../../stores/inferenceServers', () => ({
+  inferenceServers: {
+    subscribe: (f: (msg: InferenceServer[]) => void) => {
+      f(mocks.getInferenceServersMock());
+      return () => {};
+    },
+  },
+}));
+
 beforeEach(() => {
   vi.resetAllMocks();
+
+  mocks.getInferenceServersMock.mockReturnValue([]);
 
   mocks.downloadModel.mockResolvedValue(undefined);
   mocks.openFile.mockResolvedValue(undefined);
@@ -158,5 +171,49 @@ test('Expect router to be called when rocket icon clicked', async () => {
   await waitFor(() => {
     expect(gotoMock).toHaveBeenCalledWith('/service/create');
     expect(replaceMock).toHaveBeenCalledWith({ 'model-id': 'my-model' });
+  });
+});
+
+test('Expect delete button to be disabled when model in use', async () => {
+  const object: ModelInfo = {
+    id: 'my-model',
+    description: '',
+    hw: '',
+    license: '',
+    name: '',
+    registry: '',
+    url: '',
+    file: {
+      file: 'file',
+      creation: new Date(),
+      size: 1000,
+      path: 'path',
+    },
+    memory: 1000,
+  };
+
+  mocks.getInferenceServersMock.mockReturnValue([
+    {
+      models: [object],
+      type: InferenceType.LLAMA_CPP,
+      status: 'running',
+      container: {
+        containerId: '',
+        engineId: '',
+      },
+      connection: {
+        port: 0,
+      },
+      health: undefined,
+    },
+  ]);
+  render(ModelColumnActions, { object });
+
+  const deleteBtn = screen.getByTitle('Delete Model');
+  expect(deleteBtn).toBeDefined();
+
+  await vi.waitFor(() => {
+    // disable class
+    expect(deleteBtn.classList).toContain('text-gray-900');
   });
 });
