@@ -55,7 +55,6 @@ onMount(() => {
     onClick="{() => openModelFolder()}"
     title="Open Model Folder"
     enabled="{!object.state}" />
-  <span>{inUse}</span>
   <ListItemButtonIcon
     icon="{faTrash}"
     onClick="{deleteModel}"
